@@ -82,17 +82,17 @@ def run(cli_args, sub_args):
         core = Sgit()
 
         if sub_args['init']:
-            return core.init_repo()
+            retcode = core.init_repo()
         elif sub_args['list']:
-            core.repo_list()
+            retcode = core.repo_list()
         elif sub_args['add']:
-            core.repo_add(
+            retcode = core.repo_add(
                 sub_args['<name>'],
                 sub_args['<url>'],
                 sub_args['<rev>'],
             )
         elif sub_args['remove']:
-            core.repo_remove(
+            retcode = core.repo_remove(
                 sub_args['<name>'],
             )
         elif sub_args['set']:
@@ -100,17 +100,19 @@ def run(cli_args, sub_args):
             rev = sub_args['rev']
 
             if url:
-                return core.repo_set(
+                retcode = core.repo_set(
                     sub_args['<name>'],
                     'url',
                     sub_args['<url>'],
                 )
             elif rev:
-                return core.repo_set(
+                retcode = core.repo_set(
                     sub_args['<name>'],
                     'rev',
                     sub_args['<rev>'],
                 )
+
+    return retcode
 
 
 def cli_entrypoint():

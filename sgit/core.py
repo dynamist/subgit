@@ -38,6 +38,7 @@ class Sgit(object):
 
         if os.path.exists(self.sgit_config_file_path):
             print(f"File '{self.sgit_config_file_name}' already exists on disk")
+            return 1
         else:
             with open(self.sgit_config_file_path, 'w') as stream:
                 stream.write(default_repo_content)
@@ -65,7 +66,7 @@ class Sgit(object):
 
         if not repos:
             print(f"  No repos found")
-            return
+            return 1
 
         for repo_name, repo_data in repos.items():
             print(f"")
@@ -80,7 +81,8 @@ class Sgit(object):
         config = self._get_config_file()
 
         if name in config['repos']:
-            raise SgitConfigException(f'Repo with name "{name}" already exists in config file')
+            print(f'Repo with name "{name}" already exists in config file')
+            return 1
 
         config['repos'][name] = {
             'clone-url': url,
@@ -96,7 +98,8 @@ class Sgit(object):
         config = self._get_config_file()
 
         if name not in config['repos']:
-            raise SgitConfigException(f'No repo with name "{name}" found in config file')
+            print(f'No repo with name "{name}" found in config file')
+            return 1
 
         del config['repos'][name]
 
