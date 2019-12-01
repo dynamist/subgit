@@ -89,8 +89,20 @@ class Sgit(object):
 
         self._dump_config_file(config)
 
-    def repo_remove(self):
-        pass
+    def repo_remove(self, name):
+        if not name:
+            raise SgitConfigException(f'Name "{name}" must be set to sometihng')
+
+        config = self._get_config_file()
+
+        if name not in config['repos']:
+            raise SgitConfigException(f'No repo with name "{name}" found in config file')
+
+        del config['repos'][name]
+
+        self._dump_config_file(config)
+
+        print(f'Removed repo "{name}" from config file')
 
     def repo_set(self):
         pass
