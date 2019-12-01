@@ -19,7 +19,7 @@ Usage:
 
 Available sgit commands are:
     repo          Commands to manipulate .sgit.yaml
-    pull          Update a sub repo
+    update        Update a sub repo
 
 Options:
     --help          Show this help message and exit
@@ -35,6 +35,15 @@ Usage:
     sgit repo remove <name> [options]
     sgit repo set <name> url <url> [options]
     sgit repo set <name> rev <rev> [options]
+
+Options:
+    -h, --help          Show this help message and exit
+"""
+
+
+sub_update_args = """
+Usage:
+    sgit update <repo> [options]
 
 Options:
     -h, --help          Show this help message and exit
@@ -58,6 +67,8 @@ def parse_cli():
 
     if cli_args["<command>"] == "repo":
         sub_args = docopt(sub_repo_args, argv=argv)
+    elif cli_args["<command>"] == "update":
+        sub_args = docopt(sub_update_args, argv=argv)
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
@@ -111,6 +122,14 @@ def run(cli_args, sub_args):
                     'rev',
                     sub_args['<rev>'],
                 )
+
+    if cli_args['<command>'] == 'update':
+        core = Sgit()
+
+        if sub_args['update']:
+            retcode = core.update(
+                sub_args['<repo>'],
+            )
 
     return retcode
 
