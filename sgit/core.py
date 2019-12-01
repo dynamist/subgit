@@ -9,6 +9,9 @@ import re
 import ruamel
 from ruamel import yaml
 
+from sgit.exceptions import SgitConfigException
+
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
@@ -43,6 +46,16 @@ class Sgit(object):
     def _get_config_file(self):
         with open(self.sgit_config_file_path, 'r') as stream:
             return yaml.load(stream, Loader=ruamel.yaml.Loader)
+            # TODO: Minimal required data should be 'repos:'
+            #       Raise error if missing from loaded config
+
+    def _dump_config_file(self, config_data):
+        """
+        Writes the entire config file to the given disk path set
+        in the method constructor.
+        """
+        with open(self.sgit_config_file_path, 'w') as stream:
+            yaml.dump(config_data, stream, indent=2)
 
     def repo_list(self):
         config = self._get_config_file()
@@ -60,8 +73,21 @@ class Sgit(object):
             print(f"   - URL: {repo_data.get('clone-url')}")
             print(f"   - Rev: {repo_data.get('revision')}")
 
-    def repo_add(self):
-        pass
+    def repo_add(self, name, url, revision):
+        if not name or not url or not revision:
+            raise SgitConfigException(f'Name "{name}, url "{url}" or revision "{revision}" must be set')
+
+        config = self._get_config_file()
+
+        if name in config['repos']:
+            raise SgitConfigException(f'Repo with name "{name}" already exists in config file')
+
+        config['repos'][name] = {
+            'clone-url': url,
+            'revision': revision,
+        }
+
+        self._dump_config_file(config)
 
     def repo_remove(self):
         pass

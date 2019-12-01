@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # python std lib
+import os
 import pdb
 import re
 import sys
@@ -39,7 +40,7 @@ Options:
 sub_repo_args = """
 Usage:
     sgit repo list [options]
-    sgit repo add [options]
+    sgit repo add <name> <url> <rev> [options]
     sgit repo remove <target> [options]
     sgit repo set url <url> [options]
     sgit repo set rev <rev> [options]
@@ -84,6 +85,10 @@ def run(cli_args, sub_args):
     """Execute the CLI."""
     retcode = 0
 
+    if 'DEBUG' in os.environ:
+        print(cli_args).
+        print(sub_args)
+
     from sgit.core import Sgit
 
     if cli_args['<command>'] == 'init':
@@ -95,7 +100,11 @@ def run(cli_args, sub_args):
         if sub_args['list']:
             core.repo_list()
         elif sub_args['add']:
-            core.repo_add()
+            core.repo_add(
+                sub_args['<name>'],
+                sub_args['<url>'],
+                sub_args['<rev>'],
+            )
         elif sub_args['remove']:
             core.repo_remove()
         elif sub_args['set']:
