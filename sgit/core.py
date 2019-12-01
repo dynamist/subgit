@@ -55,7 +55,7 @@ class Sgit(object):
         in the method constructor.
         """
         with open(self.sgit_config_file_path, 'w') as stream:
-            yaml.dump(config_data, stream, indent=2)
+            yaml.dump(config_data, stream, indent=2, default_flow_style=False)
 
     def repo_list(self):
         config = self._get_config_file()
