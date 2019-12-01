@@ -18,6 +18,7 @@ Usage:
 
 Available sgit commands are:
     init          Initialize new sgit repo
+    repo          Commands to manipulate .sgit.yaml
     pull          Update a sub repo
 
 Options:
@@ -29,6 +30,19 @@ Options:
 sub_init_args = """
 Usage:
     sgit init [options]
+
+Options:
+    -h, --help          Show this help message and exit
+"""
+
+
+sub_repo_args = """
+Usage:
+    sgit repo list [options]
+    sgit repo add [options]
+    sgit repo remove <target> [options]
+    sgit repo set url <url> [options]
+    sgit repo set rev <rev> [options]
 
 Options:
     -h, --help          Show this help message and exit
@@ -52,12 +66,15 @@ def parse_cli():
 
     if cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
-    elif cli_args["<command>"] == "pull":
-        sub_args = docopt(sub_diffusion_args, argv=argv)
+    # elif cli_args["<command>"] == "pull":
+    #     sub_args = docopt(sub_diffusion_args, argv=argv)
+    elif cli_args["<command>"] == "repo":
+        sub_args = docopt(sub_repo_args, argv=argv)
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
 
+    # In some cases there is no additional sub args of things to extract
     if cli_args['<args>']:
         sub_args["<sub_command>"] = cli_args["<args>"][0]
 
@@ -72,6 +89,19 @@ def run(cli_args, sub_args):
     if cli_args['<command>'] == 'init':
         core = Sgit()
         return core.init_repo()
+    elif cli_args['<command>'] == 'repo':
+        core = Sgit()
+
+        if sub_args['list']:
+            core.repo_list()
+        elif sub_args['add']:
+            core.repo_add()
+        elif sub_args['remove']:
+            core.repo_remove()
+        elif sub_args['set']:
+            # TODO: url
+            # TODO: rev
+            core.repo_set()
 
 
 def cli_entrypoint():
