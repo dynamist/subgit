@@ -104,5 +104,25 @@ class Sgit(object):
 
         print(f'Removed repo "{name}" from config file')
 
-    def repo_set(self):
-        pass
+    def repo_set(self, name, attrib, value):
+        if not attrib or not value:
+            raise SgitConfigException(f'Attrib "{attrib}" or "{value}" mus tbe set to something')
+
+        config = self._get_config_file()
+
+        if name not in config['repos']:
+            print(f'Repo with name "{name}" not found in config file')
+            return 1
+
+        attrib_to_key_mapping = {
+            'url': 'clone-url',
+            'rev': 'revision',
+        }
+
+        key = attrib_to_key_mapping[attrib]
+
+        config['repos'][name][key] = value
+
+        self._dump_config_file(config)
+
+        print(f'Updated key "{key}" in repo "{name}" to value -> "{value}"')

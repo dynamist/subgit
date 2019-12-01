@@ -18,7 +18,6 @@ Usage:
     sgit <command> [options] [<args> ...]
 
 Available sgit commands are:
-    init          Initialize new sgit repo
     repo          Commands to manipulate .sgit.yaml
     pull          Update a sub repo
 
@@ -28,22 +27,14 @@ Options:
 """
 
 
-sub_init_args = """
-Usage:
-    sgit init [options]
-
-Options:
-    -h, --help          Show this help message and exit
-"""
-
-
 sub_repo_args = """
 Usage:
+    sgit repo init [options]
     sgit repo list [options]
     sgit repo add <name> <url> <rev> [options]
     sgit repo remove <name> [options]
-    sgit repo set url <url> [options]
-    sgit repo set rev <rev> [options]
+    sgit repo set <name> url <url> [options]
+    sgit repo set <name> rev <rev> [options]
 
 Options:
     -h, --help          Show this help message and exit
@@ -65,11 +56,7 @@ def parse_cli():
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
-    if cli_args["<command>"] == "init":
-        sub_args = docopt(sub_init_args, argv=argv)
-    # elif cli_args["<command>"] == "pull":
-    #     sub_args = docopt(sub_diffusion_args, argv=argv)
-    elif cli_args["<command>"] == "repo":
+    if cli_args["<command>"] == "repo":
         sub_args = docopt(sub_repo_args, argv=argv)
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
@@ -91,13 +78,12 @@ def run(cli_args, sub_args):
 
     from sgit.core import Sgit
 
-    if cli_args['<command>'] == 'init':
-        core = Sgit()
-        return core.init_repo()
-    elif cli_args['<command>'] == 'repo':
+    if cli_args['<command>'] == 'repo':
         core = Sgit()
 
-        if sub_args['list']:
+        if sub_args['init']:
+            return core.init_repo()
+        elif sub_args['list']:
             core.repo_list()
         elif sub_args['add']:
             core.repo_add(
@@ -110,9 +96,21 @@ def run(cli_args, sub_args):
                 sub_args['<name>'],
             )
         elif sub_args['set']:
-            # TODO: url
-            # TODO: rev
-            core.repo_set()
+            url = sub_args['url']
+            rev = sub_args['rev']
+
+            if url:
+                return core.repo_set(
+                    sub_args['<name>'],
+                    'url',
+                    sub_args['<url>'],
+                )
+            elif rev:
+                return core.repo_set(
+                    sub_args['<name>'],
+                    'rev',
+                    sub_args['<rev>'],
+                )
 
 
 def cli_entrypoint():
