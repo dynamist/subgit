@@ -5,6 +5,7 @@ import copy
 import logging
 import os
 import re
+import sys
 
 # sgit imports
 from sgit.exceptions import SgitConfigException
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 
 class Sgit(object):
     def __init__(self):
-        self.sgit_config_file_name = '.sgit.yaml'
+        self.sgit_config_file_name = '.sgit.yml'
 
         self.sgit_config_file_path = os.path.join(
             os.getcwd(),
@@ -31,13 +32,13 @@ class Sgit(object):
     def init_repo(self):
         """
         Algorithm:
-            - Check if .sgit.yaml exists
+            - Check if .sgit.yml exists
                 - If exists:
                     - Exit out from script
                 - If do not exists
                     - Write new initial empty file to disk
         """
-        default_repo_content = "repos:\n"
+        default_repo_content = "repos: \{\}\n"
 
         if os.path.exists(self.sgit_config_file_path):
             print(f"File '{self.sgit_config_file_name}' already exists on disk")
@@ -48,6 +49,10 @@ class Sgit(object):
                 print(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
 
     def _get_config_file(self):
+        if not os.path.exists(self.sgit_config_file_path):
+            print('No .sgit.yml file exists in current CWD')
+            sys.exit(1)
+
         with open(self.sgit_config_file_path, 'r') as stream:
             return yaml.load(stream, Loader=ruamel.yaml.Loader)
             # TODO: Minimal required data should be 'repos:'
@@ -83,7 +88,7 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name in config['repos']:
+        if name in config.get('repos', []):
             print(f'Repo with name "{name}" already exists in config file')
             return 1
 
@@ -100,7 +105,7 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name not in config['repos']:
+        if name not in config.get('repos', []):
             print(f'No repo with name "{name}" found in config file')
             return 1
 
@@ -116,7 +121,7 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name not in config['repos']:
+        if name not in config.get('repos', []):
             print(f'Repo with name "{name}" not found in config file')
             return 1
 
@@ -150,7 +155,7 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name not in config['repos']:
+        if name not in config.get('repos', []):
             print(f'Repo with name "{name}" not found in config file')
             return 1
 
