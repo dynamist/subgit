@@ -148,6 +148,33 @@ class Sgit(object):
         if ans in ['no', 'n']:
             return False
 
+    def repo_rename(self, from_name, to_name):
+        """
+        """
+        print(f'DEBUG: Rename repo "{from_name}" to "{to_name}')
+
+        config = self._get_config_file()
+
+        current_repos = config.get('repos', [])
+
+        if from_name == to_name:
+            print(f'ERROR: from name and to name can\'t be the same value')
+            return 1
+        
+        if to_name not in current_repos:
+            print(f'ERROR: Destination name already exists in config')
+            return 1
+
+        # Rename action
+        config['repos'][to_name] = config['repos'][from_name]
+
+        # Remove old repo name
+        del config['repos'][from_name]
+
+        self._dump_config_file(config)
+
+        print(f'INFO: Renamed repo from "{from_name}" to "{to_name}"')
+
     def update(self, names):
         """
         Algorithm:

@@ -35,6 +35,7 @@ Usage:
     sgit repo remove <name> [options]
     sgit repo set <name> url <url> [options]
     sgit repo set <name> rev <rev> [options]
+    sgit repo rename <from> <to> [options]
 
 Options:
     -h, --help          Show this help message and exit
@@ -123,6 +124,14 @@ def run(cli_args, sub_args):
                     'rev',
                     sub_args['<rev>'],
                 )
+        elif sub_args['rename']:
+            from_name = sub_args['<from>']
+            to_name = sub_args['<to>']
+
+            retcode = core.repo_rename(
+                from_name,
+                to_name,
+            )
 
     if cli_args['<command>'] == 'update':
         core = Sgit()
