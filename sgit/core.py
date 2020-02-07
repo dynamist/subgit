@@ -138,7 +138,17 @@ class Sgit(object):
 
         print(f'Updated key "{key}" in repo "{name}" to value -> "{value}"')
 
-    def update(self, name):
+    def yes_no(self, question):
+        print(question)
+
+        ans = input('(y/n) << ').lower()
+
+        if ans in ['yes', 'y']:
+            return True
+        if ans in ['no', 'n']:
+            return False
+
+    def update(self, names):
         """
         Algorithm:
             - If the folder do not exists
@@ -150,38 +160,53 @@ class Sgit(object):
                 - If working tree is empty
                     - Reset the repo to the specified rev
         """
-        if not name:
-            raise SgitConfigException(f'Name "{name}" must be set')
+        print(f'DEBUG: Repo update - {names}')
 
         config = self._get_config_file()
 
-        if name not in config.get('repos', []):
-            print(f'Repo with name "{name}" not found in config file')
-            return 1
+        if names == 'all':
+            repos = config.get('repos', [])
 
-        repo_path = os.path.join(os.getcwd(), name)
-        revision = config['repos'][name]['revision']
+            answer = self.yes_no(f'Are you sure you want to update the following repos "{", ".join(repos)}"')
 
-        if not os.path.exists(repo_path):
-            repo = Repo.clone_from(
-                config['repos'][name]['clone-url'],
-                repo_path,
-                branch=revision,
-            )
-            print(f'Successfully cloned repo '{name}' from remote server')
+            if not answer:
+                print(f'User aborted update step')
+                return 1
+        elif names:
+            if names not in config.get('repos', []):
+                print(f'Repo with name "{names}" not found in config file. Choices are "{", ".join(config.get("repos", []))}"')
+                return 1
+
+            repos = [names]
         else:
-            print(f'TODO: Parse for any changes...')
-            repo = Repo(
-                os.path.join(os.getcwd(), name)
-            )
-            # TODO: Check that origin remote exists
+            raise SgitConfigException(f'Name "{names}" must be set')
 
-            # Fetch all changes from upstream git repo
-            repo.remotes.origin.fetch()
+        for name in repos:
+            repo_path = os.path.join(os.getcwd(), name)
+            revision = config['repos'][name]['revision']
 
-            # Ensure the local version of the branch exists and points to the origin ref for that branch
-            repo.create_head(f'{revision}', f'origin/{revision}')
+            if not os.path.exists(repo_path):
+                repo = Repo.clone_from(
+                    config['repos'][name]['clone-url'],
+                    repo_path,
+                    branch=revision,
+                )
+                print(f'Successfully cloned repo "{name}" from remote server')
+            else:
+                print(f'TODO: Parse for any changes...')
+                repo = Repo(
+                    os.path.join(os.getcwd(), name)
+                )
+                # TODO: Check that origin remote exists
 
-            # Checkout the selected revision
-            # TODO: This only support branches for now
-            repo.heads[revision].checkout()
+                # Fetch all changes from upstream git repo
+                repo.remotes.origin.fetch()
+
+                # Ensure the local version of the branch exists and points to the origin ref for that branch
+                repo.create_head(f'{revision}', f'origin/{revision}')
+
+                # Checkout the selected revision
+                # TODO: This only support branches for now
+                repo.heads[revision].checkout()
+
+                print(f'Successfully update repo "{name}" to revision "{revision}')

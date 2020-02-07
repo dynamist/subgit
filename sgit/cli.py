@@ -43,10 +43,11 @@ Options:
 
 sub_update_args = """
 Usage:
-    sgit update <repo> [options]
+    sgit update [<repo>] [options]
 
 Options:
-    -h, --help          Show this help message and exit
+    <repo>      Name of repo to update
+    -h, --help  Show this help message and exit
 """
 
 
@@ -127,9 +128,10 @@ def run(cli_args, sub_args):
         core = Sgit()
 
         if sub_args['update']:
-            retcode = core.update(
-                sub_args['<repo>'],
-            )
+            repo = sub_args['<repo>']
+            repo = repo if repo else 'all'
+
+            retcode = core.update(repo)
 
     return retcode
 
