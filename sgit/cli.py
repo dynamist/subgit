@@ -17,7 +17,8 @@ base_args = """
 Usage:
     sgit <command> [options] [<args> ...]
 
-Available sgit commands are:
+Commands:
+    init          Initialize a new sgit repo
     repo          Commands to manipulate .sgit.yaml
     update        Update a sub repo
 
@@ -29,7 +30,6 @@ Options:
 
 sub_repo_args = """
 Usage:
-    sgit repo init [options]
     sgit repo list [options]
     sgit repo add <name> <url> <rev> [options]
     sgit repo remove <name> [options]
@@ -71,6 +71,8 @@ def parse_cli():
         sub_args = docopt(sub_repo_args, argv=argv)
     elif cli_args["<command>"] == "update":
         sub_args = docopt(sub_update_args, argv=argv)
+    elif cli_args["<command>"] == "init":
+        sub_args = {}
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
@@ -94,9 +96,7 @@ def run(cli_args, sub_args):
     if cli_args['<command>'] == 'repo':
         core = Sgit()
 
-        if sub_args['init']:
-            retcode = core.init_repo()
-        elif sub_args['list']:
+        if sub_args['list']:
             retcode = core.repo_list()
         elif sub_args['add']:
             retcode = core.repo_add(
@@ -141,6 +141,11 @@ def run(cli_args, sub_args):
             repo = repo if repo else 'all'
 
             retcode = core.update(repo)
+
+    if cli_args['<command>'] == 'init':
+        core = Sgit()
+
+        retcode = core.init_repo()
 
     return retcode
 

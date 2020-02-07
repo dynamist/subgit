@@ -14,7 +14,7 @@ mkdir /tmp/sgit; cd /tmp/sgit
 To initialize a brand new `.sgit.yml` config file run
 
 ```
-sgit repo init
+sgit init
 
 # To see the initial file content
 cat .sgit.yml
