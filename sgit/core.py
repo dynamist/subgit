@@ -38,7 +38,7 @@ class Sgit(object):
                 - If do not exists
                     - Write new initial empty file to disk
         """
-        default_repo_content = "repos: \{\}\n"
+        default_repo_content = "repos: { }\n"
 
         if os.path.exists(self.sgit_config_file_path):
             print(f"File '{self.sgit_config_file_name}' already exists on disk")
@@ -168,6 +168,7 @@ class Sgit(object):
                 repo_path,
                 branch=revision,
             )
+            print(f'Successfully cloned repo '{name}' from remote server')
         else:
             print(f'TODO: Parse for any changes...')
             repo = Repo(
