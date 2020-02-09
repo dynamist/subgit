@@ -21,13 +21,17 @@ log = logging.getLogger(__name__)
 
 
 class Sgit(object):
-    def __init__(self):
-        self.sgit_config_file_name = '.sgit.yml'
-
-        self.sgit_config_file_path = os.path.join(
-            os.getcwd(),
-            self.sgit_config_file_name,
-        )
+    def __init__(self, config_file_path=None):
+        if not config_file_path:
+            self.sgit_config_file_name = '.sgit.yml'
+    
+            self.sgit_config_file_path = os.path.join(
+                os.getcwd(),
+                self.sgit_config_file_name,
+            )
+        else:
+            self.sgit_config_file_name = os.path.basename(config_file_path)
+            self.sgit_config_file_path = config_file_path
 
     def init_repo(self):
         """
