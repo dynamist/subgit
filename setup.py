@@ -28,6 +28,11 @@ setup(
         'gitpython',
     ],
     python_requires=">=3.6",
+    extras_require={
+        'dev': [
+            "pytest",
+        ],
+    },
     classifiers=[
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
