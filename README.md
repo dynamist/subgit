@@ -59,3 +59,12 @@ Update the git repo and move the `HEAD` to the new specified branch.
 ```
 sgit update redis-py-cluster
 ```
+
+
+## Development
+
+Create a virtualenvrionment on your system.
+
+Install all runtime dependencies, development dependencies and the package in local editable mode with `pip install -e ".[dev]"
+
+To run all unit tests run `pytest` from the root folder.
