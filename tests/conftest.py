@@ -13,7 +13,9 @@ import pytest
 
 
 @pytest.fixture()
-def sgit(tmp_path, *args, **kwargs):
+def sgit(tmpdir, *args, **kwargs):
     """
     """
-    return Sgit(config_file_path=tmp_path ,*args, **kwargs)
+    conf_file = tmpdir.join('.sgit.yml')
+
+    return Sgit(config_file_path=conf_file ,*args, **kwargs)

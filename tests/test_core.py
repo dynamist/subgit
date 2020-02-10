@@ -4,7 +4,7 @@
 import os
 
 # sgit imports
-from sgit.core import Sgit
+from sgit.core import Sgit, DEFAULT_REPO_CONTENT
 
 
 def test_class_create(sgit):
@@ -18,3 +18,24 @@ def test_class_create_custom_tmp_file(tmp_path):
 
     assert s.sgit_config_file_path is not None
     assert s.sgit_config_file_path == tmp_path
+
+def test_init_repo(sgit):
+    """
+    Assumes that the fixtures sets a file path but that the file do not exists yet
+    """
+    retcode = sgit.init_repo()
+    assert retcode is None
+
+    with open(sgit.sgit_config_file_path, 'r') as stream:
+        content = stream.read()
+
+    assert content == DEFAULT_REPO_CONTENT
+
+def test_init_repo_file_exists(sgit):
+    """
+    """
+    sgit.sgit_config_file_path.write("foobar")
+
+    retcode = sgit.init_repo()
+
+    assert retcode == 1
