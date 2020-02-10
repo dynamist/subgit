@@ -5,6 +5,7 @@ import os
 
 # sgit imports
 from sgit.core import Sgit, DEFAULT_REPO_CONTENT
+from sgit.exceptions import *
 
 # 3rd party imports
 import pytest
@@ -82,4 +83,36 @@ def test_repo_list(sgit):
     ## Assume that if no repo has been added we should get an error
     ## The default configfile after init_repo is empty and usable here
     retcode = sgit.repo_list()
+    assert retcode == 1
+
+
+def test_repo_add(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    ## Test exception failure if we send in the wrong data
+    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
+        sgit.repo_add(None, None, None)
+
+    assert pytest_wrapped_e.type == SgitConfigException
+
+    ## Do a valid add of a new repo
+    name = 'foobar'
+    gitrepo = 'git@github.com/sgit'
+    revision = 'master'
+
+    sgit.repo_add(name, gitrepo, revision)
+
+    saved_data = sgit._get_config_file()
+    assert saved_data == {
+        'repos': {
+            name: {
+                'clone-url': gitrepo,
+                'revision': revision
+            }
+        }
+    }
+
+    ## If rerunning the same config then it should cause an error
+    retcode = sgit.repo_add(name, gitrepo, revision)
     assert retcode == 1
