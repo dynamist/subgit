@@ -6,6 +6,10 @@ import os
 # sgit imports
 from sgit.core import Sgit, DEFAULT_REPO_CONTENT
 
+# 3rd party imports
+import pytest
+from ruamel import yaml
+
 
 def test_class_create(sgit):
     assert sgit.sgit_config_file_name is not None
@@ -39,3 +43,33 @@ def test_init_repo_file_exists(sgit):
     retcode = sgit.init_repo()
 
     assert retcode == 1
+
+
+def test_get_config_file(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    loaded_config = sgit._get_config_file()
+    assert loaded_config == {'repos': {}}
+
+    ## If no .sgit config file exists we should get system exit call
+    os.remove(sgit.sgit_config_file_path)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        sgit._get_config_file()
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+
+
+def test_dump_config_file(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    mock_config_data = {'foo': 'bar'}
+    sgit._dump_config_file(mock_config_data)
+
+    with open(sgit.sgit_config_file_path, 'r') as stream:
+        file_content = yaml.load(stream, Loader=yaml.Loader)
+
+    assert file_content == mock_config_data
