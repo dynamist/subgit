@@ -73,3 +73,13 @@ def test_dump_config_file(sgit):
         file_content = yaml.load(stream, Loader=yaml.Loader)
 
     assert file_content == mock_config_data
+
+
+def test_repo_list(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    ## Assume that if no repo has been added we should get an error
+    ## The default configfile after init_repo is empty and usable here
+    retcode = sgit.repo_list()
+    assert retcode == 1
