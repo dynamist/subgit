@@ -170,3 +170,25 @@ def test_repo_set(sgit):
     config = sgit._get_config_file()
     assert config['repos']['1a']['clone-url'] == '2c'
     assert config['repos']['1a']['revision'] == '2d'
+
+
+def test_repo_rename(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    ## If source and destination repo name is the same, throw error
+    retcode = sgit.repo_rename('foobar', 'foobar')
+    assert retcode == 1
+
+    ## If destination repo name already exists then throw error
+    sgit.repo_add('qwerty', 'qwe@rty.se', 'master')
+    retcode = sgit.repo_rename('foobar', 'qwerty')
+    assert retcode == 2
+
+    sgit.repo_add('foobar', 'bar@foo.se', 'master')
+    retcode = sgit.repo_rename('foobar', 'barfoo')
+    assert retcode is None
+
+    config = sgit._get_config_file()
+    assert 'foobar' not in config['repos']
+    assert 'barfoo' in config['repos']

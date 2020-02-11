@@ -165,9 +165,9 @@ class Sgit(object):
             print(f'ERROR: from name and to name can\'t be the same value')
             return 1
         
-        if to_name not in current_repos:
+        if to_name in current_repos:
             print(f'ERROR: Destination name already exists in config')
-            return 1
+            return 2
 
         # Rename action
         config['repos'][to_name] = config['repos'][from_name]
