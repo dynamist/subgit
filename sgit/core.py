@@ -102,9 +102,12 @@ class Sgit(object):
             print(f'Repo with name "{name}" already exists in config file')
             return 1
 
+        # TODO: It is bad that each repo will default to a branch type and not a tag type
         config['repos'][name] = {
             'clone-url': url,
-            'revision': revision,
+            'revision': {
+                'branch': revision
+            },
         }
 
         self._dump_config_file(config)
@@ -135,18 +138,22 @@ class Sgit(object):
             print(f'Repo with name "{name}" not found in config file')
             return 1
 
-        attrib_to_key_mapping = {
-            'url': 'clone-url',
-            'rev': 'revision',
-        }
-
-        key = attrib_to_key_mapping[attrib]
-
-        config['repos'][name][key] = value
+        if attrib =='tag':
+            del config['repos'][name]['revision']['tag']
+            config['repos'][name]['revision']['tag'] = value
+            print(f'Set tag for repo "{name}" to -> "{value}"')
+        elif attrib == 'branch':
+            del config['repos'][name]['revision']['branch']
+            config['repos'][name]['revision']['branch'] = value
+            print(f'Set branch for repo "{name}" to -> "{value}"')
+        elif attrib == 'url':
+            config['repos'][name]['clone-url'] = value
+            print(f'Set git clone-url for repo "{name}" to -> "{value}"')
+        else:
+            print(f'Unsupported set attribute operation')
+            return 1
 
         self._dump_config_file(config)
-
-        print(f'Updated key "{key}" in repo "{name}" to value -> "{value}"')
 
     def yes_no(self, question):
         print(question)

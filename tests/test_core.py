@@ -111,7 +111,9 @@ def test_repo_add(sgit):
         'repos': {
             name: {
                 'clone-url': gitrepo,
-                'revision': revision
+                'revision': {
+                    'branch': revision,
+                }
             }
         }
     }
@@ -164,12 +166,15 @@ def test_repo_set(sgit):
     ## Add a repo with certain attributes. Update them and test they got saved
     sgit.repo_add('1a', '1a', '1c')
 
-    sgit.repo_set('1a', 'url', '2c')
-    sgit.repo_set('1a', 'rev', '2d')
+    retcode = sgit.repo_set('1a', 'url', '2c')
+    assert retcode is None
+
+    retcode = sgit.repo_set('1a', 'branch', '2d')
+    assert retcode is None
 
     config = sgit._get_config_file()
     assert config['repos']['1a']['clone-url'] == '2c'
-    assert config['repos']['1a']['revision'] == '2d'
+    assert config['repos']['1a']['revision']['branch'] == '2d'
 
 
 def test_repo_rename(sgit):

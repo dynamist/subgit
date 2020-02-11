@@ -34,7 +34,8 @@ Usage:
     sgit repo add <name> <url> <rev> [options]
     sgit repo remove <name> [options]
     sgit repo set <name> url <url> [options]
-    sgit repo set <name> rev <rev> [options]
+    sgit repo set <name> branch <branch> [options]
+    sgit repo set <name> tag <tag> [options]
     sgit repo rename <from> <to> [options]
 
 Options:
@@ -109,21 +110,26 @@ def run(cli_args, sub_args):
                 sub_args['<name>'],
             )
         elif sub_args['set']:
-            url = sub_args['url']
-            rev = sub_args['rev']
-
-            if url:
+            if sub_args['tag']:
+                retcode = core.repo_set(
+                    sub_args['<name>'],
+                    'tag',
+                    sub_args['<tag>'],
+                )
+            elif sub_args['branch']:
+                retcode = core.repo_set(
+                    sub_args['<name>'],
+                    'branch',
+                    sub_args['<branch>'],
+                )
+            elif sub_args['url']:
                 retcode = core.repo_set(
                     sub_args['<name>'],
                     'url',
                     sub_args['<url>'],
                 )
-            elif rev:
-                retcode = core.repo_set(
-                    sub_args['<name>'],
-                    'rev',
-                    sub_args['<rev>'],
-                )
+            else:
+                retcode = 1
         elif sub_args['rename']:
             from_name = sub_args['<from>']
             to_name = sub_args['<to>']
