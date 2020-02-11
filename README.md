@@ -52,6 +52,9 @@ This will glone the git repos to your current cwd and update them to the master 
 
 `sgit` relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
+
+## List config file content and repo status
+
 To view the content and all tracked git repos run
 
 ```

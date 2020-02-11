@@ -21,6 +21,7 @@ Commands:
     init          Initialize a new sgit repo
     repo          Commands to manipulate .sgit.yaml
     update        Update a sub repo
+    list          Show the config for all repos in the config file
 
 Options:
     --help          Show this help message and exit
@@ -30,7 +31,6 @@ Options:
 
 sub_repo_args = """
 Usage:
-    sgit repo list [options]
     sgit repo add <name> <url> <rev> [options]
     sgit repo remove <name> [options]
     sgit repo set <name> url <url> [options]
@@ -74,6 +74,8 @@ def parse_cli():
         sub_args = docopt(sub_update_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = {}
+    elif cli_args["<command>"] == "list":
+        sub_args = {}
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
@@ -97,9 +99,7 @@ def run(cli_args, sub_args):
     if cli_args['<command>'] == 'repo':
         core = Sgit()
 
-        if sub_args['list']:
-            retcode = core.repo_list()
-        elif sub_args['add']:
+        if sub_args['add']:
             retcode = core.repo_add(
                 sub_args['<name>'],
                 sub_args['<url>'],
@@ -138,6 +138,10 @@ def run(cli_args, sub_args):
                 from_name,
                 to_name,
             )
+
+    if cli_args['<command>'] == 'list':
+        core = Sgit()
+        retcode = core.repo_list()
 
     if cli_args['<command>'] == 'update':
         core = Sgit()
