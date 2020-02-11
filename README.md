@@ -64,29 +64,41 @@ Output
  ** All repos **
 
  - pykwalify
-   - URL: git@github.com:grokzen/pykwalify.git
-   - Rev: master
+    URL: git@github.com:grokzen/pykwalify.git
+    Tag: 1.7.0
 
  - redis
-   - URL: git@github.com:grokzen/redis-py-cluster.git
-   - Rev: master
+    URL: git@github.com:grokzen/redis-py-cluster.git
+    Branch: master
 ```
 
 
 ## Update a repos revision
 
-To move a repo to a new revision you do the following. Note that moving branches is only supported right now.
+The command `sgit repo set` is used to manipulate existing repos in a config file.
+
+
+### Update/set a branch revision
+
+To move a repo to a new branch revision run
 
 ```
-## This branch might not exist forever so update to some existing branch that
-## you can find with "git branch -a" inside the git repo itself.
+sgit repo set redis branch unstable
 
-sgit repo set redis rev feature/multi-key-commands-in-pipelines
+## Update the git repo and checkout the branch by running
+
+sgit update redis
 ```
 
-Update the git repo and move the `HEAD` to the new specified branch.
+### Update/set a tag revision
+
+To checkout a tag in a repo run
 
 ```
+sgit repo set redis tag 1.0.0
+
+## Update the git repo and checkout the tag by running
+
 sgit update redis
 ```
 
