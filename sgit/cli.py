@@ -44,7 +44,7 @@ Options:
 
 sub_update_args = """
 Usage:
-    sgit update [<repo>] [options]
+    sgit update [<repo> ...] [options]
 
 Options:
     <repo>      Name of repo to update

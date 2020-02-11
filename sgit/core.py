@@ -203,6 +203,15 @@ class Sgit(object):
             if not answer:
                 print(f'User aborted update step')
                 return 1
+        elif isinstance(names, list):
+            # Validate that all provided repo names exists in the config
+            for name in names:
+                if name not in config['repos']:
+                    print(f'Repo with name "{name}" not found in config file. Choices are "{", ".join(config.get("repos", []))}"')
+                    return 1
+
+            # If all repos was found, use the list of provided repos as list to process below
+            repos = names
         elif names:
             if names not in config.get('repos', []):
                 print(f'Repo with name "{names}" not found in config file. Choices are "{", ".join(config.get("repos", []))}"')
