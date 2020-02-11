@@ -12,7 +12,7 @@ from sgit.exceptions import SgitConfigException
 
 # 3rd party imports
 import ruamel
-from git import Repo
+from git import Repo, Git
 from ruamel import yaml
 
 
@@ -83,8 +83,14 @@ class Sgit(object):
         for repo_name, repo_data in repos.items():
             print(f"")
             print(f" - {repo_name}")
-            print(f"   - URL: {repo_data.get('clone-url')}")
-            print(f"   - Rev: {repo_data.get('revision')}")
+            print(f"    URL: {repo_data.get('clone-url')}")
+
+            if 'branch' in repo_data['revision']:
+                print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
+            elif 'tag' in repo_data['revision']:
+                print(f"    Tag: {repo_data.get('revision', {}).get('tag', None)}")
+            else:
+                raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
 
     def repo_add(self, name, url, revision):
         if not name or not url or not revision:
@@ -198,7 +204,8 @@ class Sgit(object):
         if names == 'all':
             repos = config.get('repos', [])
 
-            answer = self.yes_no(f'Are you sure you want to update the following repos "{", ".join(repos)}"')
+            repo_choices = ", ".join(repos)
+            answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
 
             if not answer:
                 print(f'User aborted update step')
@@ -207,19 +214,22 @@ class Sgit(object):
             # Validate that all provided repo names exists in the config
             for name in names:
                 if name not in config['repos']:
-                    print(f'Repo with name "{name}" not found in config file. Choices are "{", ".join(config.get("repos", []))}"')
+                    choices = ", ".join(config.get("repos", []))
+                    print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
             repos = names
         elif names:
             if names not in config.get('repos', []):
-                print(f'Repo with name "{names}" not found in config file. Choices are "{", ".join(config.get("repos", []))}"')
+                choices = ", ".join(config.get("repos", []))
+                print(f'Repo with name "{names}" not found in config file. Choices are "{choices}"')
                 return 1
 
             repos = [names]
         else:
-            raise SgitConfigException(f'Name "{names}" must be set')
+            print(f"DEBUG: names {names}")
+            raise SgitConfigException(f'Unsuported value for argument name')
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
@@ -234,19 +244,57 @@ class Sgit(object):
                 print(f'Successfully cloned repo "{name}" from remote server')
             else:
                 print(f'TODO: Parse for any changes...')
+                # TODO: Check that origin remote exists
                 repo = Repo(
                     os.path.join(os.getcwd(), name)
                 )
-                # TODO: Check that origin remote exists
+                g = Git(os.path.join(os.getcwd(), name))
 
                 # Fetch all changes from upstream git repo
                 repo.remotes.origin.fetch()
 
-                # Ensure the local version of the branch exists and points to the origin ref for that branch
-                repo.create_head(f'{revision}', f'origin/{revision}')
+                # How to handle the repo when a branch is specified
+                if 'branch' in revision:
+                    print(f"DEBUG: Handling branch update case")
 
-                # Checkout the selected revision
-                # TODO: This only support branches for now
-                repo.heads[revision].checkout()
+                    # Extract the sub tag data
+                    branch_revision = revision['branch']
 
-                print(f'Successfully update repo "{name}" to revision "{revision}')
+                    # Ensure the local version of the branch exists and points to the origin ref for that branch
+                    repo.create_head(f'{branch_revision}', f'origin/{branch_revision}')
+
+                    # Checkout the selected revision
+                    # TODO: This only support branches for now
+                    repo.heads[branch_revision].checkout()
+
+                    print(f'Successfully update repo "{name}" to branch "{branch_revision}')
+                    print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
+                elif 'tag':
+                    print("TODO: Handle tag update case")
+
+                    # Fetch all tags from the git repo and order them by the date they was made.
+                    # The most recent tag is first in the list
+                    tags = [
+                        str(tag) for tag in
+                        reversed(sorted(
+                            repo.tags,
+                            key=lambda t: t.commit.committed_datetime
+                        ))
+                    ]
+                    print(f"DEBUG: {tags}")
+
+                    # Extract the sub tag data
+                    tag_revision = revision['tag']
+
+                    if tag_revision in tags:
+                        g.checkout(tag_revision)
+                        print(f'INFO: Checked out tag "{tag_revision}" for repo "{name}"')
+                        print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
+                    else:
+                        print(f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"')
+
+                        print(f"")
+                        print(f" - Available tags")
+
+                        for tag in tags:
+                            print(f"   - {tag}")
