@@ -116,3 +116,29 @@ def test_repo_add(sgit):
     ## If rerunning the same config then it should cause an error
     retcode = sgit.repo_add(name, gitrepo, revision)
     assert retcode == 1
+
+
+def test_repo_remove(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    config = sgit._get_config_file()
+    assert 'foobar' not in config['repos']
+
+    ## Initially there is no repo added so it shold fail out
+    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
+        sgit.repo_remove(None)
+
+    assert pytest_wrapped_e.type == SgitConfigException
+
+    ## If we provide a name that do not exist in the config file
+    retcode = sgit.repo_remove('foobar')
+    assert retcode == 1
+
+    ## Add a repo and try to remove it
+    sgit.repo_add('foobar', 'foo@bar.com', 'master')
+    retcode = sgit.repo_remove('foobar')
+    assert retcode == None
+
+    config = sgit._get_config_file()
+    assert 'foobar' not in config['repos']
