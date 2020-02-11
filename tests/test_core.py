@@ -16,6 +16,7 @@ def test_class_create(sgit):
     assert sgit.sgit_config_file_name is not None
     assert sgit.sgit_config_file_path is not None
 
+
 def test_class_create_custom_tmp_file(tmp_path):
     s = Sgit(config_file_path=tmp_path)
     assert s.sgit_config_file_name is not None
@@ -23,6 +24,7 @@ def test_class_create_custom_tmp_file(tmp_path):
 
     assert s.sgit_config_file_path is not None
     assert s.sgit_config_file_path == tmp_path
+
 
 def test_init_repo(sgit):
     """
@@ -35,6 +37,7 @@ def test_init_repo(sgit):
         content = stream.read()
 
     assert content == DEFAULT_REPO_CONTENT
+
 
 def test_init_repo_file_exists(sgit):
     """
