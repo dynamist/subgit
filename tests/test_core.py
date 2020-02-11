@@ -145,3 +145,28 @@ def test_repo_remove(sgit):
 
     config = sgit._get_config_file()
     assert 'foobar' not in config['repos']
+
+
+def test_repo_set(sgit):
+    retcode = sgit.init_repo()
+    assert retcode == None
+
+    ## Test that providing bad types fail in exception
+    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
+        sgit.repo_remove(None)
+
+    assert pytest_wrapped_e.type == SgitConfigException
+
+    ## When providing a repo name that do not exists it should fail out
+    retcode = sgit.repo_remove('foobar')
+    assert retcode == 1
+
+    ## Add a repo with certain attributes. Update them and test they got saved
+    sgit.repo_add('1a', '1a', '1c')
+
+    sgit.repo_set('1a', 'url', '2c')
+    sgit.repo_set('1a', 'rev', '2d')
+
+    config = sgit._get_config_file()
+    assert config['repos']['1a']['clone-url'] == '2c'
+    assert config['repos']['1a']['revision'] == '2d'
