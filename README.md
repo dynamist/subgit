@@ -58,7 +58,7 @@ This will glone the git repos to your current cwd and update them to the master 
 To view the content and all tracked git repos run
 
 ```
-sgit repo list
+sgit list
 ```
 
 Output
