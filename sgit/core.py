@@ -8,7 +8,7 @@ import re
 import sys
 
 # sgit imports
-from sgit.exceptions import SgitConfigException
+from sgit.exceptions import SgitException, SgitConfigException
 
 # 3rd party imports
 import ruamel
@@ -245,12 +245,15 @@ class Sgit(object):
             revision = config['repos'][name]['revision']
 
             if not os.path.exists(repo_path):
-                repo = Repo.clone_from(
-                    config['repos'][name]['clone-url'],
-                    repo_path,
-                    branch=revision,
-                )
-                print(f'Successfully cloned repo "{name}" from remote server')
+                if 'branch' in revision:
+                    repo = Repo.clone_from(
+                        config['repos'][name]['clone-url'],
+                        repo_path,
+                        branch=revision['branch'],
+                    )
+                    print(f'Successfully cloned repo "{name}" from remote server')
+                else:
+                    raise SgitException('Initial clone must be from a branch')
             else:
                 print(f'TODO: Parse for any changes...')
                 # TODO: Check that origin remote exists
