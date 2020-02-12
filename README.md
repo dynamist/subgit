@@ -130,3 +130,19 @@ pip install -e ".[dev]"
 ```
 
 To run all unit tests run `pytest` from the root folder.
+
+
+## Project details
+
+|   |   |
+|---|---|
+| python support         | 3.6, 3.7, 3.8 |
+| Source                 | https://github.com/dynamist/sgit |
+| Changelog              | https://github.com/dynamist/sgit/blob/master/CHANGELOG.md |
+| Issues                 | https://github.com/dynamist/sgit/issues |
+| pypi                   | https://pypi.python.org/pypi/sgit/ |
+| License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
+| Copyright              | `Copyright (c) 2019-2020 Dynamist AB` |
+| git repo               | `git@github.com:dynamist/sgit.git` |
+| install stable         | `pip install sgit` |
+| required dependencies  | `docopt>=0.6.2`<br> `ruamel.yaml>=0.16.0`<br> `gitpython>=3.0.5` |
