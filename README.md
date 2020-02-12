@@ -30,10 +30,10 @@ To add a git repo that you want to track run
 
 ```
 ## Add first git repo
-sgit repo add pykwalify git@github.com:grokzen/pykwalify.git master
+sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git master
 
 ## Add second git repo
-sgit repo add redis git@github.com:grokzen/redis-py-cluster.git master
+sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
 ```
 
 To do the initial pull/update of all repos in the config file and move the repo to the specified revision run
