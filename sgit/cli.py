@@ -19,7 +19,7 @@ Usage:
 
 Commands:
     init          Initialize a new sgit repo
-    repo          Commands to manipulate .sgit.yaml
+    repo          Commands to manipulate .sgit.yml
     update        Update a sub repo
     list          Show the config for all repos in the config file
 

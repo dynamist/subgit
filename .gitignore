@@ -125,3 +125,4 @@ dmypy.json
 .pyre/
 
 *.sgit.yaml*
+*.sgit.yml*
