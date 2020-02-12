@@ -112,6 +112,8 @@ class Sgit(object):
 
         self._dump_config_file(config)
 
+        print(f'Successfully added new repo "{name}"')
+
     def repo_remove(self, name):
         if not name:
             raise SgitConfigException(f'Name "{name}" must be set to sometihng')
