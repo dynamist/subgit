@@ -19,9 +19,9 @@ Usage:
 
 Commands:
     init          Initialize a new sgit repo
+    list          Show the config for all repos in the config file
     repo          Commands to manipulate .sgit.yml
     update        Update a sub repo
-    list          Show the config for all repos in the config file
 
 Options:
     --help          Show this help message and exit
@@ -33,10 +33,10 @@ sub_repo_args = """
 Usage:
     sgit repo add <name> <url> <rev> [options]
     sgit repo remove <name> [options]
-    sgit repo set <name> url <url> [options]
+    sgit repo rename <from> <to> [options]
     sgit repo set <name> branch <branch> [options]
     sgit repo set <name> tag <tag> [options]
-    sgit repo rename <from> <to> [options]
+    sgit repo set <name> url <url> [options]
 
 Options:
     -h, --help          Show this help message and exit
