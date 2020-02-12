@@ -53,6 +53,24 @@ Options:
 """
 
 
+sub_list_args = """
+Usage:
+    sgit list [options]
+
+Options:
+    -h, --help  Show this help message and exit
+"""
+
+
+sub_init_args = """
+Usage:
+    sgit init [options]
+
+Options:
+    -h, --help  Show this help message and exit
+"""
+
+
 def parse_cli():
     """Parse the CLI arguments and options."""
     import sgit
@@ -73,9 +91,9 @@ def parse_cli():
     elif cli_args["<command>"] == "update":
         sub_args = docopt(sub_update_args, argv=argv)
     elif cli_args["<command>"] == "init":
-        sub_args = {}
+        sub_args = docopt(sub_init_args, argv=argv)
     elif cli_args["<command>"] == "list":
-        sub_args = {}
+        sub_args = docopt(sub_list_args, argv=argv)
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
