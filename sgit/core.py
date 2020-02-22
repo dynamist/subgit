@@ -265,6 +265,8 @@ class Sgit(object):
         if has_dirty:
             print(f'\nERROR: Found one or more dirty repos. Resolve it before continue...')
             return 1
+        if not repos:
+            raise SgitConfigException(f'No repositories found')
 
         #
         ## Repos looks good to be updated. Run the update logic for each repo in sequence
