@@ -244,6 +244,37 @@ class Sgit(object):
             raise SgitConfigException(f'No repositories found')
 
         #
+        ## Validation step across all repos to manipulate that they are not dirty
+        ## or anything uncommited that would break the code trees.
+        ##
+        ## Abort out if any repo is bad.
+        #
+
+        has_dirty = False
+        for name in repos:
+            repo_path = os.path.join(os.getcwd(), name)
+
+            # If the path do not exists then the repo can't be dirty
+            if not os.path.exists(repo_path):
+                continue
+
+            repo = Repo(repo_path)
+
+            ## A dirty repo means there is uncommited changes in the tree
+            if repo.is_dirty(): 
+                print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
+                dirty_files = [item.a_path for item in repo.index.diff(None)]
+
+                for file in dirty_files:
+                    print(f' - {file}')
+
+                has_dirty = True
+
+        if has_dirty:
+            print(f'\nERROR: Found one or more dirty repos. Resolve it before continue...')
+            return 1
+
+        #
         ## Repos looks good to be updated. Run the update logic for each repo in sequence
         #
 
@@ -271,24 +302,6 @@ class Sgit(object):
                 repo = Repo(
                     os.path.join(os.getcwd(), name)
                 )
-
-                #
-                ## Validation step across all repos to manipulate that they are not dirty
-                ## or anything uncommited that would break the code trees.
-                ##
-                ## Abort out if any repo is bad.
-                #
-
-                if repo.is_dirty():
-                    print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
-                    dirty_files = [item.a_path for item in repo.index.diff(None)]
-
-                    for file in dirty_files:
-                        print(f' - {file}')
-
-                    print(f'\nERROR: Found one or more dirty repos. Resolve it before continue...')
-
-                    return 1
 
                 g = Git(os.path.join(os.getcwd(), name))
 
