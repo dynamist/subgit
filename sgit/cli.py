@@ -31,7 +31,7 @@ Options:
 
 sub_repo_args = """
 Usage:
-    sgit repo add <name> <url> <rev> [options]
+    sgit repo add <name> <url> [<rev>] [options]
     sgit repo remove <name> [options]
     sgit repo rename <from> <to> [options]
     sgit repo set <name> branch <branch> [options]
@@ -39,6 +39,7 @@ Usage:
     sgit repo set <name> url <url> [options]
 
 Options:
+    <rev>               Revision to set for a given repo [default: master]
     -h, --help          Show this help message and exit
 """
 
@@ -121,7 +122,7 @@ def run(cli_args, sub_args):
             retcode = core.repo_add(
                 sub_args['<name>'],
                 sub_args['<url>'],
-                sub_args['<rev>'],
+                sub_args['<rev>'] or 'master',
             )
         elif sub_args['remove']:
             retcode = core.repo_remove(
