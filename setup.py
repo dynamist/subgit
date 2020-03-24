@@ -25,7 +25,7 @@ setup(
     install_requires=[
         'docopt>=0.6.2',
         'ruamel.yaml>=0.16.0',
-        'gitpython',
+        'gitpython>=3.1.0',
     ],
     python_requires=">=3.6",
     extras_require={
