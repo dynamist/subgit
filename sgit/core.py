@@ -322,7 +322,7 @@ class Sgit(object):
                     # TODO: This only support branches for now
                     repo.heads[branch_revision].checkout()
 
-                    print(f'Successfully update repo "{name}" to branch "{branch_revision}')
+                    print(f'Successfully update repo "{name}" to branch "{branch_revision}"')
                     print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
                 elif 'tag':
                     print("TODO: Handle tag update case")
