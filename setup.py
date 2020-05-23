@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sgit = sgit.cli:cli_entrypoint',
+            'git-sub = sgit.cli:cli_entrypoint',
         ],
     },
     install_requires=[
