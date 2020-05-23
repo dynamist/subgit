@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # python std lib
-import copy
 import logging
 import os
-import re
 import sys
 
 # sgit imports
