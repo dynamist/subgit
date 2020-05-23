@@ -44,12 +44,12 @@ class Sgit():
         if os.path.exists(self.sgit_config_file_path):
             print(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
-        else:
-            with open(self.sgit_config_file_path, "w") as stream:
-                stream.write(DEFAULT_REPO_CONTENT)
-                print(
-                    f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk'
-                )
+
+        with open(self.sgit_config_file_path, "w") as stream:
+            stream.write(DEFAULT_REPO_CONTENT)
+            print(
+                f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk'
+            )
 
     def _get_config_file(self):
         if not os.path.exists(self.sgit_config_file_path):
