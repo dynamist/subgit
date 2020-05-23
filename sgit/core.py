@@ -280,21 +280,20 @@ class Sgit(object):
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
-            revision = config['repos'][name]['revision']
 
             if not os.path.exists(repo_path):
-                if 'branch' in revision:
-                    try:
-                        repo = Repo.clone_from(
-                            config['repos'][name]['clone-url'],
-                            repo_path,
-                            branch=revision['branch'],
-                        )
-                        print(f'Successfully cloned repo "{name}" from remote server')
-                    except Exception as e:
-                        raise SgitException(f'Clone "{name}" failed, exception: {e}')
-                else:
-                    raise SgitException('Initial clone must be from a branch')
+                revision = config['repos'][name]['revision']
+                clone_rev = revision['tag'] if 'tag' in revision else revision['branch']
+
+                try:
+                    repo = Repo.clone_from(
+                        config['repos'][name]['clone-url'],
+                        repo_path,
+                        branch=clone_rev,
+                    )
+                    print(f'Successfully cloned repo "{name}" from remote server')
+                except Exception as e:
+                    raise SgitException(f'Clone "{name}" failed, exception: {e}')
             else:
                 print(f'TODO: Parse for any changes...')
                 # TODO: Check that origin remote exists
