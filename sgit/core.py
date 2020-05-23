@@ -25,11 +25,10 @@ DEFAULT_REPO_CONTENT = "repos: { }\n"
 class Sgit(object):
     def __init__(self, config_file_path=None):
         if not config_file_path:
-            self.sgit_config_file_name = '.sgit.yml'
-    
+            self.sgit_config_file_name = ".sgit.yml"
+
             self.sgit_config_file_path = os.path.join(
-                os.getcwd(),
-                self.sgit_config_file_name,
+                os.getcwd(), self.sgit_config_file_name
             )
         else:
             self.sgit_config_file_name = os.path.basename(config_file_path)
@@ -48,16 +47,18 @@ class Sgit(object):
             print(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
         else:
-            with open(self.sgit_config_file_path, 'w') as stream:
+            with open(self.sgit_config_file_path, "w") as stream:
                 stream.write(DEFAULT_REPO_CONTENT)
-                print(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
+                print(
+                    f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk'
+                )
 
     def _get_config_file(self):
         if not os.path.exists(self.sgit_config_file_path):
-            print('No .sgit.yml file exists in current CWD')
+            print("No .sgit.yml file exists in current CWD")
             sys.exit(1)
 
-        with open(self.sgit_config_file_path, 'r') as stream:
+        with open(self.sgit_config_file_path, "r") as stream:
             return yaml.load(stream, Loader=ruamel.yaml.Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
@@ -67,12 +68,12 @@ class Sgit(object):
         Writes the entire config file to the given disk path set
         in the method constructor.
         """
-        with open(self.sgit_config_file_path, 'w') as stream:
+        with open(self.sgit_config_file_path, "w") as stream:
             yaml.dump(config_data, stream, indent=2, default_flow_style=False)
 
     def repo_list(self):
         config = self._get_config_file()
-        repos = config.get('repos', {})
+        repos = config.get("repos", {})
 
         print(f" ** All repos **")
 
@@ -85,30 +86,31 @@ class Sgit(object):
             print(f" - {repo_name}")
             print(f"    URL: {repo_data.get('clone-url')}")
 
-            if 'branch' in repo_data['revision']:
-                print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
-            elif 'tag' in repo_data['revision']:
+            if "branch" in repo_data["revision"]:
+                print(
+                    f"    Branch: {repo_data.get('revision', {}).get('branch', None)}"
+                )
+            elif "tag" in repo_data["revision"]:
                 print(f"    Tag: {repo_data.get('revision', {}).get('tag', None)}")
             else:
-                raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
+                raise SgitConfigException(
+                    'No tag or "branch" key found inside "revision" block for repo "{name}'
+                )
 
     def repo_add(self, name, url, revision):
         if not name or not url or not revision:
-            raise SgitConfigException(f'Name "{name}, url "{url}" or revision "{revision}" must be set')
+            raise SgitConfigException(
+                f'Name "{name}, url "{url}" or revision "{revision}" must be set'
+            )
 
         config = self._get_config_file()
 
-        if name in config.get('repos', []):
+        if name in config.get("repos", []):
             print(f'Repo with name "{name}" already exists in config file')
             return 1
 
         # TODO: It is bad that each repo will default to a branch type and not a tag type
-        config['repos'][name] = {
-            'clone-url': url,
-            'revision': {
-                'branch': revision
-            },
-        }
+        config["repos"][name] = {"clone-url": url, "revision": {"branch": revision}}
 
         self._dump_config_file(config)
 
@@ -120,11 +122,11 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name not in config.get('repos', []):
+        if name not in config.get("repos", []):
             print(f'No repo with name "{name}" found in config file')
             return 1
 
-        del config['repos'][name]
+        del config["repos"][name]
 
         self._dump_config_file(config)
 
@@ -136,23 +138,23 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        if name not in config.get('repos', []):
+        if name not in config.get("repos", []):
             print(f'Repo with name "{name}" not found in config file')
             return 1
 
-        if attrib =='tag':
-            del config['repos'][name]['revision']['tag']
-            config['repos'][name]['revision']['tag'] = value
+        if attrib == "tag":
+            del config["repos"][name]["revision"]["tag"]
+            config["repos"][name]["revision"]["tag"] = value
             print(f'Set tag for repo "{name}" to -> "{value}"')
-        elif attrib == 'branch':
-            del config['repos'][name]['revision']['branch']
-            config['repos'][name]['revision']['branch'] = value
+        elif attrib == "branch":
+            del config["repos"][name]["revision"]["branch"]
+            config["repos"][name]["revision"]["branch"] = value
             print(f'Set branch for repo "{name}" to -> "{value}"')
-        elif attrib == 'url':
-            config['repos'][name]['clone-url'] = value
+        elif attrib == "url":
+            config["repos"][name]["clone-url"] = value
             print(f'Set git clone-url for repo "{name}" to -> "{value}"')
         else:
-            print(f'Unsupported set attribute operation')
+            print(f"Unsupported set attribute operation")
             return 1
 
         self._dump_config_file(config)
@@ -160,11 +162,11 @@ class Sgit(object):
     def yes_no(self, question):
         print(question)
 
-        ans = input('(y/n) << ').lower()
+        ans = input("(y/n) << ").lower()
 
-        if ans in ['yes', 'y']:
+        if ans in ["yes", "y"]:
             return True
-        if ans in ['no', 'n']:
+        if ans in ["no", "n"]:
             return False
 
     def repo_rename(self, from_name, to_name):
@@ -174,21 +176,21 @@ class Sgit(object):
 
         config = self._get_config_file()
 
-        current_repos = config.get('repos', [])
+        current_repos = config.get("repos", [])
 
         if from_name == to_name:
-            print(f'ERROR: from name and to name can\'t be the same value')
+            print(f"ERROR: from name and to name can't be the same value")
             return 1
-        
+
         if to_name in current_repos:
-            print(f'ERROR: Destination name already exists in config')
+            print(f"ERROR: Destination name already exists in config")
             return 2
 
         # Rename action
-        config['repos'][to_name] = config['repos'][from_name]
+        config["repos"][to_name] = config["repos"][from_name]
 
         # Remove old repo name
-        del config['repos'][from_name]
+        del config["repos"][from_name]
 
         self._dump_config_file(config)
 
@@ -206,42 +208,48 @@ class Sgit(object):
                 - If working tree is empty
                     - Reset the repo to the specified rev
         """
-        print(f'DEBUG: Repo update - {names}')
+        print(f"DEBUG: Repo update - {names}")
 
         config = self._get_config_file()
 
-        if names == 'all':
-            repos = config.get('repos', [])
+        if names == "all":
+            repos = config.get("repos", [])
 
             repo_choices = ", ".join(repos)
-            answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
+            answer = self.yes_no(
+                f'Are you sure you want to update the following repos "{repo_choices}"'
+            )
 
             if not answer:
-                print(f'User aborted update step')
+                print(f"User aborted update step")
                 return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
-                if name not in config['repos']:
+                if name not in config["repos"]:
                     choices = ", ".join(config.get("repos", []))
-                    print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
+                    print(
+                        f'Repo with name "{name}" not found in config file. Choices are "{choices}"'
+                    )
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
             repos = names
         elif names:
-            if names not in config.get('repos', []):
+            if names not in config.get("repos", []):
                 choices = ", ".join(config.get("repos", []))
-                print(f'Repo with name "{names}" not found in config file. Choices are "{choices}"')
+                print(
+                    f'Repo with name "{names}" not found in config file. Choices are "{choices}"'
+                )
                 return 1
 
             repos = [names]
         else:
             print(f"DEBUG: names {names}")
-            raise SgitConfigException(f'Unsuported value for argument name')
+            raise SgitConfigException(f"Unsuported value for argument name")
 
         if not repos:
-            raise SgitConfigException(f'No repositories found')
+            raise SgitConfigException(f"No repositories found")
 
         #
         ## Validation step across all repos to manipulate that they are not dirty
@@ -261,17 +269,21 @@ class Sgit(object):
             repo = Repo(repo_path)
 
             ## A dirty repo means there is uncommited changes in the tree
-            if repo.is_dirty(): 
-                print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
+            if repo.is_dirty():
+                print(
+                    f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files'
+                )
                 dirty_files = [item.a_path for item in repo.index.diff(None)]
 
                 for file in dirty_files:
-                    print(f' - {file}')
+                    print(f" - {file}")
 
                 has_dirty = True
 
         if has_dirty:
-            print(f'\nERROR: Found one or more dirty repos. Resolve it before continue...')
+            print(
+                f"\nERROR: Found one or more dirty repos. Resolve it before continue..."
+            )
             return 1
 
         #
@@ -280,27 +292,23 @@ class Sgit(object):
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
-            revision = config['repos'][name]['revision']
+            revision = config["repos"][name]["revision"]
 
             if not os.path.exists(repo_path):
-                clone_rev = revision['tag'] if 'tag' in revision else revision['branch']
+                clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
 
                 try:
                     repo = Repo.clone_from(
-                        config['repos'][name]['clone-url'],
-                        repo_path,
-                        branch=clone_rev,
+                        config["repos"][name]["clone-url"], repo_path, branch=clone_rev
                     )
                     print(f'Successfully cloned repo "{name}" from remote server')
                 except Exception as e:
                     raise SgitException(f'Clone "{name}" failed, exception: {e}')
             else:
-                print(f'TODO: Parse for any changes...')
+                print(f"TODO: Parse for any changes...")
                 # TODO: Check that origin remote exists
 
-                repo = Repo(
-                    os.path.join(os.getcwd(), name)
-                )
+                repo = Repo(os.path.join(os.getcwd(), name))
 
                 g = Git(os.path.join(os.getcwd(), name))
 
@@ -308,44 +316,51 @@ class Sgit(object):
                 repo.remotes.origin.fetch()
 
                 # How to handle the repo when a branch is specified
-                if 'branch' in revision:
+                if "branch" in revision:
                     print(f"DEBUG: Handling branch update case")
 
                     # Extract the sub tag data
-                    branch_revision = revision['branch']
+                    branch_revision = revision["branch"]
 
                     # Ensure the local version of the branch exists and points to the origin ref for that branch
-                    repo.create_head(f'{branch_revision}', f'origin/{branch_revision}')
+                    repo.create_head(f"{branch_revision}", f"origin/{branch_revision}")
 
                     # Checkout the selected revision
                     # TODO: This only support branches for now
                     repo.heads[branch_revision].checkout()
 
-                    print(f'Successfully update repo "{name}" to branch "{branch_revision}"')
-                    print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
-                elif 'tag' in revision:
+                    print(
+                        f'Successfully update repo "{name}" to branch "{branch_revision}"'
+                    )
+                    print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
+                elif "tag" in revision:
                     print("TODO: Handle tag update case")
 
                     # Fetch all tags from the git repo and order them by the date they was made.
                     # The most recent tag is first in the list
                     tags = [
-                        str(tag) for tag in
-                        reversed(sorted(
-                            repo.tags,
-                            key=lambda t: t.commit.committed_datetime
-                        ))
+                        str(tag)
+                        for tag in reversed(
+                            sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+                        )
                     ]
                     print(f"DEBUG: {tags}")
 
                     # Extract the sub tag data
-                    tag_revision = revision['tag']
+                    tag_revision = revision["tag"]
 
                     if tag_revision in tags:
                         g.checkout(tag_revision)
-                        print(f'INFO: Checked out tag "{tag_revision}" for repo "{name}"')
-                        print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
+                        print(
+                            f'INFO: Checked out tag "{tag_revision}" for repo "{name}"'
+                        )
+                        print(
+                            f"INFO: Current git hash on HEAD: {str(repo.head.commit)}"
+                        )
                     else:
-                        print(f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"')
+                        print(
+                            f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"'
+                        )
 
                         print(f"")
                         print(f" - Available tags")
