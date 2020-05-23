@@ -280,9 +280,9 @@ class Sgit(object):
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
+            revision = config['repos'][name]['revision']
 
             if not os.path.exists(repo_path):
-                revision = config['repos'][name]['revision']
                 clone_rev = revision['tag'] if 'tag' in revision else revision['branch']
 
                 try:
