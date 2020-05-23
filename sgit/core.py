@@ -165,8 +165,6 @@ class Sgit():
         return ans.lower().startswith("y")
 
     def repo_rename(self, from_name, to_name):
-        """
-        """
         print(f'DEBUG: Rename repo "{from_name}" to "{to_name}')
 
         config = self._get_config_file()
