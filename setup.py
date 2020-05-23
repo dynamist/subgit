@@ -23,9 +23,20 @@ setup(
             "git-sub = sgit.cli:cli_entrypoint",
         ]
     },
-    install_requires=["docopt>=0.6.2", "ruamel.yaml>=0.16.0", "gitpython>=3.1.0"],
+    install_requires=[
+        "docopt>=0.6.2",
+        "ruamel.yaml>=0.16.0",
+        "gitpython>=3.1.0",
+    ],
     python_requires=">=3.6",
-    extras_require={"dev": ["pytest", "pytest-mock", "pylint", "mock"]},
+    extras_require={
+        "dev": [
+            "pytest",
+            "pytest-mock",
+            "pylint",
+            "mock",
+        ],
+    },
     classifiers=[
         # "Development Status :: 1 - Planning",
         # "Development Status :: 2 - Pre-Alpha",

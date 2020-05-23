@@ -36,7 +36,12 @@ def init_logging(log_level):
 
     logging_conf = {
         "version": 1,
-        "root": {"level": log_level, "handlers": ["console"]},
+        "root": {
+            "level": log_level,
+            "handlers": [
+                "console",
+            ]
+        },
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
@@ -45,7 +50,9 @@ def init_logging(log_level):
                 "stream": "ext://sys.stdout",
             }
         },
-        "formatters": {"simple": {"format": " {0}".format(msg)}},
+        "formatters": {
+            "simple": {
+                "format": " {0}".format(msg)}},
     }
 
     logging.config.dictConfig(logging_conf)
