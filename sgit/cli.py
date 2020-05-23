@@ -100,78 +100,62 @@ def parse_cli():
         sys.exit(1)
 
     # In some cases there is no additional sub args of things to extract
-    if cli_args['<args>']:
+    if cli_args["<args>"]:
         sub_args["<sub_command>"] = cli_args["<args>"][0]
 
     return (cli_args, sub_args)
+
 
 def run(cli_args, sub_args):
     """Execute the CLI."""
     retcode = 0
 
-    if 'DEBUG' in os.environ:
+    if "DEBUG" in os.environ:
         print(cli_args)
         print(sub_args)
 
     from sgit.core import Sgit
 
-    if cli_args['<command>'] == 'repo':
+    if cli_args["<command>"] == "repo":
         core = Sgit()
 
-        if sub_args['add']:
+        if sub_args["add"]:
             retcode = core.repo_add(
-                sub_args['<name>'],
-                sub_args['<url>'],
-                sub_args['<rev>'] or 'master',
+                sub_args["<name>"], sub_args["<url>"], sub_args["<rev>"] or "master"
             )
-        elif sub_args['remove']:
-            retcode = core.repo_remove(
-                sub_args['<name>'],
-            )
-        elif sub_args['set']:
-            if sub_args['tag']:
+        elif sub_args["remove"]:
+            retcode = core.repo_remove(sub_args["<name>"])
+        elif sub_args["set"]:
+            if sub_args["tag"]:
+                retcode = core.repo_set(sub_args["<name>"], "tag", sub_args["<tag>"])
+            elif sub_args["branch"]:
                 retcode = core.repo_set(
-                    sub_args['<name>'],
-                    'tag',
-                    sub_args['<tag>'],
+                    sub_args["<name>"], "branch", sub_args["<branch>"]
                 )
-            elif sub_args['branch']:
-                retcode = core.repo_set(
-                    sub_args['<name>'],
-                    'branch',
-                    sub_args['<branch>'],
-                )
-            elif sub_args['url']:
-                retcode = core.repo_set(
-                    sub_args['<name>'],
-                    'url',
-                    sub_args['<url>'],
-                )
+            elif sub_args["url"]:
+                retcode = core.repo_set(sub_args["<name>"], "url", sub_args["<url>"])
             else:
                 retcode = 1
-        elif sub_args['rename']:
-            from_name = sub_args['<from>']
-            to_name = sub_args['<to>']
+        elif sub_args["rename"]:
+            from_name = sub_args["<from>"]
+            to_name = sub_args["<to>"]
 
-            retcode = core.repo_rename(
-                from_name,
-                to_name,
-            )
+            retcode = core.repo_rename(from_name, to_name)
 
-    if cli_args['<command>'] == 'list':
+    if cli_args["<command>"] == "list":
         core = Sgit()
         retcode = core.repo_list()
 
-    if cli_args['<command>'] == 'update':
+    if cli_args["<command>"] == "update":
         core = Sgit()
 
-        if sub_args['update']:
-            repo = sub_args['<repo>']
-            repo = repo if repo else 'all'
+        if sub_args["update"]:
+            repo = sub_args["<repo>"]
+            repo = repo if repo else "all"
 
             retcode = core.update(repo)
 
-    if cli_args['<command>'] == 'init':
+    if cli_args["<command>"] == "init":
         core = Sgit()
 
         retcode = core.init_repo()

@@ -16,6 +16,6 @@ import pytest
 def sgit(tmpdir, *args, **kwargs):
     """
     """
-    conf_file = tmpdir.join('.sgit.yml')
+    conf_file = tmpdir.join(".sgit.yml")
 
-    return Sgit(config_file_path=conf_file ,*args, **kwargs)
+    return Sgit(config_file_path=conf_file, *args, **kwargs)
