@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 DEFAULT_REPO_CONTENT = "repos: { }\n"
 
 
-class Sgit(object):
+class Sgit():
     def __init__(self, config_file_path=None):
         if not config_file_path:
             self.sgit_config_file_name = ".sgit.yml"
