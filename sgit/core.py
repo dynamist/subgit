@@ -323,7 +323,7 @@ class Sgit(object):
 
                     print(f'Successfully update repo "{name}" to branch "{branch_revision}"')
                     print(f'INFO: Current git hash on HEAD: {str(repo.head.commit)}')
-                elif 'tag':
+                elif 'tag' in revision:
                     print("TODO: Handle tag update case")
 
                     # Fetch all tags from the git repo and order them by the date they was made.
