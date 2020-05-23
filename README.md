@@ -1,8 +1,8 @@
 # sgit
 
-Sub-git / Submodules-git
+The name came originally from "Submodules Git", or more commonly "Sub Git".
 
-The main purpose of this tool is to be used as a sync for cases where we need to pull together a set of different git repos into a single collection in one spot.
+The main purpose of this tool is to be used as a sync for cases to pull together a set of different Git repos into a deterministic directory tree. It is used to collect various individual parts into a whole.
 
 The main two advantages over other solutions is that when compared to the normal git submodules, you can more easily specify and avoid having to commit into your tree every single update that you want to have in your sgit checkout. In a submodule solution where you want to update and track the current and latest commit for the maste branch, you do not have to update your configuration file each time you make a new commit in the child repo. In the cases where you are pointing to tags and stable releases of a software, there is not much difference. When comparing to other tools that manipulates and pulls in each remote repos entire tree into your tree, this tool avoids that and dont care about that scenario. The only file you have to commit into a repo that you want sub repos to be exposed to is the `.sgit.yml` config file.
 
@@ -24,19 +24,19 @@ Create a new folder where you want your sub repos to be located
 mkdir /tmp/sgit; cd /tmp/sgit
 ```
 
-To initialize a empty `.sgit.yml` config file
+Initialize an empty `.sgit.yml` config file
 
 ```
 sgit init
 ```
 
-You can inspect the content by looking inside the `.sgit.yml` config file
+Inspect the content by looking inside the `.sgit.yml` config file
 
 ```
 cat .sgit.yml
 ```
 
-Default config file content for a new initialized repo
+Default content of the configuration file for a new initialized repo
 
 ```
 repos: { }
@@ -46,31 +46,32 @@ To add any number of git repos that you want to clone
 
 ```
 sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git
+```
 
-# You can optionally specify the target branch you want to clone by adding it at after the clone url
+You can optionally specify the target branch you want to clone by adding it at after the clone url
+
+```
 sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
 ```
 
-To do the initial pull/update of all repos in the config file and move the repo to the specified revision
+Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision
 
 ```
 sgit update
 ```
 
-Or you can update any specific repo
+Or you can update a specific repo
 
 ```
 sgit update redis
 ```
-
-This will clone the git repos to your current cwd and update them to the master branch in our example above.
 
 sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
 
 ## List config file content and repo status
 
-To view the content and all tracked git repos
+View the content and all tracked git repos
 
 ```
 sgit list
@@ -124,10 +125,9 @@ Update the git repo and checkout the tag
 sgit update redis
 ```
 
-
 ## Development
 
-Create a virtualenvironment (venv) on your system
+Create a virtualenv (venv) on your system
 
 Install all runtime dependencies, development dependencies and the package in local editable mode
 
