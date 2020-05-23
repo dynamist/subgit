@@ -160,12 +160,9 @@ class Sgit():
     def yes_no(self, question):
         print(question)
 
-        ans = input("(y/n) << ").lower()
+        ans = input("(y/n) << ")
 
-        if ans in ["yes", "y"]:
-            return True
-        if ans in ["no", "n"]:
-            return False
+        return ans.lower().startswith("y")
 
     def repo_rename(self, from_name, to_name):
         """
