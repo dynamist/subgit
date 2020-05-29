@@ -170,7 +170,11 @@ def cli_entrypoint():
         exit_code = run(cli_args, sub_args)
         sys.exit(exit_code)
     except Exception:
-        extype, value, tb = sys.exc_info()
-        traceback.print_exc()
-        pdb.post_mortem(tb)
-        raise
+        if not "BATCH" in os.environ:
+            extype, value, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+            raise
+        else:
+            print(f"INFO: batch mode")
+            print(f"ERROR: fatal exception")
