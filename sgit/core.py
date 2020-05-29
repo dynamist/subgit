@@ -209,13 +209,18 @@ class Sgit():
             repos = config.get("repos", [])
 
             repo_choices = ", ".join(repos)
-            answer = self.yes_no(
-                f'Are you sure you want to update the following repos "{repo_choices}"'
-            )
 
-            if not answer:
-                print(f"User aborted update step")
-                return 1
+            if "BATCH" in os.environ:
+                print(f"INFO: batch mode")
+                print(f'Updating the following repos "{repo_choices}"')
+            else:
+                answer = self.yes_no(
+                    f'Are you sure you want to update the following repos "{repo_choices}"'
+                )
+
+                if not answer:
+                    print(f"User aborted update step")
+                    return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
