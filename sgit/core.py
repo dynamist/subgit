@@ -235,6 +235,18 @@ class Sgit():
 
         print(f"INFO: Disable repo Successfully")
 
+    def _get_active_repos(self, config):
+        """
+        Helper method that will return only the repos that is enabled and active for usage
+        """
+        active_repos = []
+
+        for repo_name, repo_data in config.get("repos", {}).items():
+            if repo_data.get("enable", True):
+                active_repos.append(repo_name)
+
+        return active_repos
+
     def update(self, names):
         """
         Algorithm:
@@ -251,10 +263,17 @@ class Sgit():
 
         config = self._get_config_file()
 
-        if names == "all":
-            repos = config.get("repos", [])
+        active_repos = self._get_active_repos(config)
 
-            repo_choices = ", ".join(repos)
+        repos = []
+
+        if len(active_repos) == 0:
+            print(f"INFO: There is no repos defined or enabled in the config")
+            return 1
+            # raise SgitConfigException(f"No repositories found or is enabled")
+
+        if names == "all":
+            repo_choices = ", ".join(active_repos)
 
             if "BATCH" in os.environ:
                 print(f"INFO: batch mode")
@@ -270,21 +289,17 @@ class Sgit():
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
-                if name not in config["repos"]:
-                    choices = ", ".join(config.get("repos", []))
-                    print(
-                        f'Repo with name "{name}" not found in config file. Choices are "{choices}"'
-                    )
+                if name not in active_repos:
+                    choices = ", ".join(active_repos)
+                    print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
             repos = names
         elif names:
-            if names not in config.get("repos", []):
+            if names not in self._get_active_repos(config):
                 choices = ", ".join(config.get("repos", []))
-                print(
-                    f'Repo with name "{names}" not found in config file. Choices are "{choices}"'
-                )
+                print(f'Repo with name "{names}" not found in config file. Choices are "{choices}"')
                 return 1
 
             repos = [names]
