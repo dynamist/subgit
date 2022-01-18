@@ -29,11 +29,13 @@ setup(
     ],
     python_requires=">=3.6",
     extras_require={
-        "dev": [
+        "test": [
             "pytest",
             "pytest-mock",
-            "pylint",
             "mock",
+        ],
+        "dev": [
+            "pylint",
         ],
     },
     classifiers=[

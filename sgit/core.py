@@ -189,6 +189,52 @@ class Sgit():
 
         print(f'INFO: Renamed repo from "{from_name}" to "{to_name}"')
 
+    def repo_enable(self, repo_name):
+        """
+        Will set the option `enable: true` for a given repo
+
+        Returns 0 if enable repo was successfull
+        Returns 1 if provided repo name was not found in config
+        """
+        print(f"DEBUG: Enable repo {repo_name}")
+
+        config = self._get_config_file()
+
+        current_repos = config.get("repos", [])
+
+        if repo_name not in current_repos:
+            print(f"ERROR: Repo name not found in config file")
+            return 1
+
+        config["repos"][repo_name]["enable"] = True
+
+        self._dump_config_file(config)
+
+        print(f"INFO: Enabled repo Successfully")
+
+    def repo_disable(self, repo_name):
+        """
+        Will set the option `disable: true` for a given repo
+
+        Returns 0 if disable repo was successfull
+        Returns 1 if provided repo name was not found in config
+        """
+        print(f"DEBUG: Enable repo {repo_name}")
+
+        config = self._get_config_file()
+
+        current_repos = config.get("repos", [])
+
+        if repo_name not in current_repos:
+            print(f"ERROR: Repo name not found in config file")
+            return 1
+
+        config["repos"][repo_name]["enable"] = False
+
+        self._dump_config_file(config)
+
+        print(f"INFO: Disable repo Successfully")
+
     def update(self, names):
         """
         Algorithm:
