@@ -10,7 +10,7 @@ If this flag is not defined or set in your configuration, it will default to `tr
 ```yaml
 repos:
   pykwalify:
-  	enable: true
+    enable: true
     clone-url: git@github.com:Grokzen/pykwalify.git
     revision:
       branch: master
@@ -24,7 +24,7 @@ You can disable repo with the following flag
 ```yaml
 repos:
   pykwalify:
-  	enable: false
+    enable: false
     clone-url: git@github.com:Grokzen/pykwalify.git
     revision:
       branch: master
