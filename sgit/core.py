@@ -286,6 +286,8 @@ class Sgit():
                 if not answer:
                     print(f"User aborted update step")
                     return 1
+
+            repos = active_repos
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
