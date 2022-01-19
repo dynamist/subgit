@@ -206,7 +206,7 @@ class Sgit():
             print(f"ERROR: Repo name not found in config file")
             return 1
 
-        config["repos"][repo_name]["enable"] = True
+        config["repos"][repo_name]["enabled"] = True
 
         self._dump_config_file(config)
 
@@ -229,7 +229,7 @@ class Sgit():
             print(f"ERROR: Repo name not found in config file")
             return 1
 
-        config["repos"][repo_name]["enable"] = False
+        config["repos"][repo_name]["enabled"] = False
 
         self._dump_config_file(config)
 

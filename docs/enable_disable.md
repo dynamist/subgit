@@ -1,6 +1,6 @@
 # enable/disable repo
 
-You can enable or disable the parsing of any repo defined in `.sgit.yml` file by adding the flag `enable: true/false` to your repo configuration block.
+You can enable or disable the parsing of any repo defined in `.sgit.yml` file by adding the flag `enabled: true/false` to your repo configuration block.
 
 If this flag is not defined or set in your configuration, it will default to `true` and a repo will be parsed by default.
 
@@ -10,7 +10,7 @@ If this flag is not defined or set in your configuration, it will default to `tr
 ```yaml
 repos:
   pykwalify:
-    enable: true
+    enabled: true
     clone-url: git@github.com:Grokzen/pykwalify.git
     revision:
       branch: master
@@ -24,7 +24,7 @@ You can disable repo with the following flag
 ```yaml
 repos:
   pykwalify:
-    enable: false
+    enabled: false
     clone-url: git@github.com:Grokzen/pykwalify.git
     revision:
       branch: master
