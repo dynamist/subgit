@@ -126,6 +126,25 @@ Update the git repo and checkout the tag
 sgit update redis
 ```
 
+
+## Fetch a repo
+
+If you want to `git fetch` all or a subset of git repos in your config then you can use the `sgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
+
+Sgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
+
+```bash
+# Fetch all repos implicitly
+sgit fetch
+
+# Fetch all repos explicltly
+sgit fetch all
+
+# Fetch two indiviidual repos
+sgit fetch redis pykwalify
+```
+
+
 ## Development
 
 Create a virtualenv (venv) on your system

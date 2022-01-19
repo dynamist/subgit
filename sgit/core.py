@@ -10,6 +10,7 @@ from sgit.exceptions import SgitException, SgitConfigException
 
 # 3rd party imports
 import ruamel
+import git
 from git import Repo, Git
 from ruamel import yaml
 
@@ -163,6 +164,48 @@ class Sgit():
         ans = input("(y/n) << ")
 
         return ans.lower().startswith("y")
+
+    def fetch(self, repos):
+        """
+        Runs "git fetch" on one or more git repos.
+        """
+        print(f"DEBUG: Repo fetch - {repos}")
+
+        config = self._get_config_file()
+
+        repos_to_fetch = []
+
+        if repos == "all" or repos[0] == "all":
+            for repo_name in config["repos"]:
+                repos_to_fetch.append(repo_name)
+        elif isinstance(repos, list):
+            for repo_name in repos:
+                if repo_name in config["repos"]:
+                    repos_to_fetch.append(repo_name)
+        elif isinstance(repos, str):
+            if repos in config["repos"]:
+                repos_to_fetch.append(repos)
+
+        print(f"INFO: repos: {repos_to_fetch}")
+
+        for repo_name in repos_to_fetch:
+            try:
+                repo_path = os.path.join(os.getcwd(), repo_name)
+                git_repo = Repo(repo_path)
+
+                print(f"Fetching git repo '{repo_name}'")
+                fetch_results = git_repo.remotes.origin.fetch()
+                print(f"Fetching completed for repo '{repo_name}'")
+
+                for fetch_result in fetch_results:
+                    print(f" - Fetch result: {fetch_result.name}")
+            except git.exc.NoSuchPathError:
+                print(f"Repo {repo_name} not found on disk. You must update to clone it before fetching")
+                return 1
+
+        print(f"Fetching for all repos completed")
+        return 0
+
 
     def repo_rename(self, from_name, to_name):
         print(f'DEBUG: Rename repo "{from_name}" to "{to_name}')
