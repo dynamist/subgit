@@ -168,25 +168,34 @@ class Sgit():
     def fetch(self, repos):
         """
         Runs "git fetch" on one or more git repos.
+
+        To update all enabled repos send in None as value.
+
+        To update a subset of repo names, send in them as a list of strings.
+        A empty list of items will update no repos.
         """
-        print(f"DEBUG: Repo fetch - {repos}")
+        print(f"DEBUG: Repo fetch input - {repos}")
 
         config = self._get_config_file()
 
         repos_to_fetch = []
 
-        if repos == "all" or repos[0] == "all":
+        if repos is None:
             for repo_name in config["repos"]:
                 repos_to_fetch.append(repo_name)
-        elif isinstance(repos, list):
+
+        if isinstance(repos, list):
             for repo_name in repos:
                 if repo_name in config["repos"]:
                     repos_to_fetch.append(repo_name)
-        elif isinstance(repos, str):
-            if repos in config["repos"]:
-                repos_to_fetch.append(repos)
+                else:
+                    print(f"WARNING: repo '{repo_name}' not found in configuration")
 
-        print(f"INFO: repos: {repos_to_fetch}")
+        print(f"INFO: repos to fetch: {repos_to_fetch}")
+
+        if len(repos_to_fetch) == 0:
+            print(f"No repos to fetch found")
+            return 1
 
         for repo_name in repos_to_fetch:
             try:

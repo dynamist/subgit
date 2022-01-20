@@ -137,9 +137,6 @@ Sgit fetch command supports the selection of either all repos or a subset of rep
 # Fetch all repos implicitly
 sgit fetch
 
-# Fetch all repos explicltly
-sgit fetch all
-
 # Fetch two indiviidual repos
 sgit fetch redis pykwalify
 ```

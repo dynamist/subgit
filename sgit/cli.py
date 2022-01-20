@@ -175,10 +175,10 @@ def run(cli_args, sub_args):
     if cli_args["<command>"] == "fetch":
         core = Sgit()
 
-        repo = sub_args["<repo>"]
-        repo = repo or "all"
+        repos = sub_args["<repo>"]
+        repos = repos or None
 
-        retcode = core.fetch(repo)
+        retcode = core.fetch(repos)
 
     return retcode
 
