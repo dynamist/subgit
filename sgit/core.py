@@ -237,6 +237,64 @@ class Sgit():
 
         print(f'INFO: Renamed repo from "{from_name}" to "{to_name}"')
 
+    def repo_enable(self, repo_name):
+        """
+        Will set the option `enable: true` for a given repo
+
+        Returns 0 if enable repo was successfull
+        Returns 1 if provided repo name was not found in config
+        """
+        print(f"DEBUG: Enable repo {repo_name}")
+
+        config = self._get_config_file()
+
+        current_repos = config.get("repos", [])
+
+        if repo_name not in current_repos:
+            print(f"ERROR: Repo name not found in config file")
+            return 1
+
+        config["repos"][repo_name]["enabled"] = True
+
+        self._dump_config_file(config)
+
+        print(f"INFO: Enabled repo Successfully")
+
+    def repo_disable(self, repo_name):
+        """
+        Will set the option `disable: true` for a given repo
+
+        Returns 0 if disable repo was successfull
+        Returns 1 if provided repo name was not found in config
+        """
+        print(f"DEBUG: Enable repo {repo_name}")
+
+        config = self._get_config_file()
+
+        current_repos = config.get("repos", [])
+
+        if repo_name not in current_repos:
+            print(f"ERROR: Repo name not found in config file")
+            return 1
+
+        config["repos"][repo_name]["enabled"] = False
+
+        self._dump_config_file(config)
+
+        print(f"INFO: Disable repo Successfully")
+
+    def _get_active_repos(self, config):
+        """
+        Helper method that will return only the repos that is enabled and active for usage
+        """
+        active_repos = []
+
+        for repo_name, repo_data in config.get("repos", {}).items():
+            if repo_data.get("enable", True):
+                active_repos.append(repo_name)
+
+        return active_repos
+
     def update(self, names):
         """
         To update all repos defined in the configuration send in names=None
@@ -257,10 +315,17 @@ class Sgit():
 
         config = self._get_config_file()
 
+        active_repos = self._get_active_repos(config)
+
+        repos = []
+
+        if len(active_repos) == 0:
+            print(f"ERROR: There is no repos defined or enabled in the config")
+            return 1
+
         if names is None:
             repos = config.get("repos", [])
-
-            repo_choices = ", ".join(repos)
+            repo_choices = ", ".join(active_repos)
 
             answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
 
@@ -270,8 +335,8 @@ class Sgit():
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
-                if name not in config["repos"]:
-                    choices = ", ".join(config.get("repos", []))
+                if name not in active_repos:
+                    choices = ", ".join(active_repos)
                     print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 

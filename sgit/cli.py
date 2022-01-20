@@ -38,6 +38,8 @@ Usage:
     sgit repo set <name> branch <branch> [options]
     sgit repo set <name> tag <tag> [options]
     sgit repo set <name> url <url> [options]
+    sgit repo enable <name> [options]
+    sgit repo disable <name> [options]
 
 Options:
     <rev>               Revision to set for a given repo [default: master]
@@ -153,6 +155,14 @@ def run(cli_args, sub_args):
             to_name = sub_args["<to>"]
 
             retcode = core.repo_rename(from_name, to_name)
+        elif sub_args["enable"]:
+            repo_name = sub_args["<name>"]
+
+            retcode = core.repo_enable(repo_name)
+        elif sub_args["disable"]:
+            repo_name = sub_args["<name>"]
+
+            retcode = core.repo_disable(repo_name)
 
     if cli_args["<command>"] == "list":
         core = Sgit()
