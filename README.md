@@ -55,7 +55,7 @@ You can optionally specify the target branch you want to clone by adding it at a
 sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
 ```
 
-Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision
+Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision. Running `update` command without any arguments will update all repos defined in the configuration file.
 
 ```
 sgit update
@@ -64,7 +64,7 @@ sgit update
 Or you can update a specific repo
 
 ```
-sgit update redis
+sgit update pykwalify redis
 ```
 
 sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.

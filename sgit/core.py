@@ -48,9 +48,7 @@ class Sgit():
 
         with open(self.sgit_config_file_path, "w") as stream:
             stream.write(DEFAULT_REPO_CONTENT)
-            print(
-                f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk'
-            )
+            print(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
 
     def _get_config_file(self):
         if not os.path.exists(self.sgit_config_file_path):
@@ -86,21 +84,15 @@ class Sgit():
             print(f"    URL: {repo_data.get('clone-url')}")
 
             if "branch" in repo_data["revision"]:
-                print(
-                    f"    Branch: {repo_data.get('revision', {}).get('branch', None)}"
-                )
+                print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
             elif "tag" in repo_data["revision"]:
                 print(f"    Tag: {repo_data.get('revision', {}).get('tag', None)}")
             else:
-                raise SgitConfigException(
-                    'No tag or "branch" key found inside "revision" block for repo "{name}'
-                )
+                raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
 
     def repo_add(self, name, url, revision):
         if not name or not url or not revision:
-            raise SgitConfigException(
-                f'Name "{name}, url "{url}" or revision "{revision}" must be set'
-            )
+            raise SgitConfigException(f'Name "{name}, url "{url}" or revision "{revision}" must be set')
 
         config = self._get_config_file()
 
@@ -161,9 +153,13 @@ class Sgit():
     def yes_no(self, question):
         print(question)
 
-        ans = input("(y/n) << ")
+        if "BATCH" in os.environ:
+            print(f"INFO: batch mode")
+            return True
 
-        return ans.lower().startswith("y")
+        answer = input("(y/n) << ")
+
+        return answer.lower().startswith("y")
 
     def fetch(self, repos):
         """
@@ -243,6 +239,10 @@ class Sgit():
 
     def update(self, names):
         """
+        To update all repos defined in the configuration send in names=None
+
+        To update a subset of repos send in a list of strings names=["repo1", "repo2"]
+
         Algorithm:
             - If the folder do not exists
                 - clone the repo with Repo.clone_from
@@ -257,49 +257,32 @@ class Sgit():
 
         config = self._get_config_file()
 
-        if names == "all":
+        if names is None:
             repos = config.get("repos", [])
 
             repo_choices = ", ".join(repos)
 
-            if "BATCH" in os.environ:
-                print(f"INFO: batch mode")
-                print(f'Updating the following repos "{repo_choices}"')
-            else:
-                answer = self.yes_no(
-                    f'Are you sure you want to update the following repos "{repo_choices}"'
-                )
+            answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
 
-                if not answer:
-                    print(f"User aborted update step")
-                    return 1
+            if not answer:
+                print(f"User aborted update step")
+                return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
                 if name not in config["repos"]:
                     choices = ", ".join(config.get("repos", []))
-                    print(
-                        f'Repo with name "{name}" not found in config file. Choices are "{choices}"'
-                    )
+                    print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
             repos = names
-        elif names:
-            if names not in config.get("repos", []):
-                choices = ", ".join(config.get("repos", []))
-                print(
-                    f'Repo with name "{names}" not found in config file. Choices are "{choices}"'
-                )
-                return 1
-
-            repos = [names]
         else:
             print(f"DEBUG: names {names}")
-            raise SgitConfigException(f"Unsuported value for argument name")
+            raise SgitConfigException(f"Unsuported value type for argument names")
 
         if not repos:
-            raise SgitConfigException(f"No repositories found")
+            raise SgitConfigException(f"No valid repositories found")
 
         #
         ## Validation step across all repos to manipulate that they are not dirty
@@ -309,6 +292,7 @@ class Sgit():
         #
 
         has_dirty = False
+
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
 
@@ -320,9 +304,7 @@ class Sgit():
 
             ## A dirty repo means there is uncommited changes in the tree
             if repo.is_dirty():
-                print(
-                    f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files'
-                )
+                print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
                 dirty_files = [item.a_path for item in repo.index.diff(None)]
 
                 for file in dirty_files:
@@ -331,9 +313,7 @@ class Sgit():
                 has_dirty = True
 
         if has_dirty:
-            print(
-                f"\nERROR: Found one or more dirty repos. Resolve it before continue..."
-            )
+            print(f"\nERROR: Found one or more dirty repos. Resolve it before continue...")
             return 1
 
         #
@@ -349,7 +329,9 @@ class Sgit():
 
                 try:
                     repo = Repo.clone_from(
-                        config["repos"][name]["clone-url"], repo_path, branch=clone_rev
+                        config["repos"][name]["clone-url"],
+                        repo_path,
+                        branch=clone_rev,
                     )
                     print(f'Successfully cloned repo "{name}" from remote server')
                 except Exception as e:
@@ -379,9 +361,7 @@ class Sgit():
                     # TODO: This only support branches for now
                     repo.heads[branch_revision].checkout()
 
-                    print(
-                        f'Successfully update repo "{name}" to branch "{branch_revision}"'
-                    )
+                    print(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
                     print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
                 elif "tag" in revision:
                     print("TODO: Handle tag update case")
@@ -401,17 +381,10 @@ class Sgit():
 
                     if tag_revision in tags:
                         g.checkout(tag_revision)
-                        print(
-                            f'INFO: Checked out tag "{tag_revision}" for repo "{name}"'
-                        )
-                        print(
-                            f"INFO: Current git hash on HEAD: {str(repo.head.commit)}"
-                        )
+                        print(f'INFO: Checked out tag "{tag_revision}" for repo "{name}"')
+                        print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
                     else:
-                        print(
-                            f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"'
-                        )
-
+                        print(f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"')
                         print(f"")
                         print(f" - Available tags")
 

@@ -161,11 +161,10 @@ def run(cli_args, sub_args):
     if cli_args["<command>"] == "update":
         core = Sgit()
 
-        if sub_args["update"]:
-            repo = sub_args["<repo>"]
-            repo = repo or "all"
+        repos = sub_args["<repo>"]
+        repos = repos or None
 
-            retcode = core.update(repo)
+        retcode = core.update(repos)
 
     if cli_args["<command>"] == "init":
         core = Sgit()
