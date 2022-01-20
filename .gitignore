@@ -126,3 +126,8 @@ dmypy.json
 
 *.sgit.yaml*
 *.sgit.yml*
+
+# Commonly used example git repos from documentation
+pykwalify/
+redis/
+redis-py-cluster/

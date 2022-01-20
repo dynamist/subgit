@@ -55,7 +55,7 @@ You can optionally specify the target branch you want to clone by adding it at a
 sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
 ```
 
-Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision
+Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision. Running `update` command without any arguments will update all repos defined in the configuration file.
 
 ```
 sgit update
@@ -64,7 +64,7 @@ sgit update
 Or you can update a specific repo
 
 ```
-sgit update redis
+sgit update pykwalify redis
 ```
 
 sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
@@ -125,6 +125,22 @@ Update the git repo and checkout the tag
 ```
 sgit update redis
 ```
+
+
+## Fetch a repo
+
+If you want to `git fetch` all or a subset of git repos in your config then you can use the `sgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
+
+Sgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
+
+```bash
+# Fetch all repos implicitly
+sgit fetch
+
+# Fetch two indiviidual repos
+sgit fetch redis pykwalify
+```
+
 
 ## Development
 

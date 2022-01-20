@@ -22,6 +22,7 @@ Commands:
     list          Show the config for all repos in the config file
     repo          Commands to manipulate .sgit.yml
     update        Update a sub repo
+    fetch         Runs git fetch on all repos
 
 Options:
     --help          Show this help message and exit
@@ -74,6 +75,15 @@ Options:
 """
 
 
+sub_fetch_args = """
+Usage:
+    sgit fetch [<repo> ...] [options]
+
+Options:
+    -h, --help  Show this help message and exit
+"""
+
+
 def parse_cli():
     """Parse the CLI arguments and options."""
     import sgit
@@ -97,6 +107,8 @@ def parse_cli():
         sub_args = docopt(sub_init_args, argv=argv)
     elif cli_args["<command>"] == "list":
         sub_args = docopt(sub_list_args, argv=argv)
+    elif cli_args["<command>"] == "fetch":
+        sub_args = docopt(sub_fetch_args, argv=argv)
     else:
         extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
         sys.exit(1)
@@ -159,16 +171,23 @@ def run(cli_args, sub_args):
     if cli_args["<command>"] == "update":
         core = Sgit()
 
-        if sub_args["update"]:
-            repo = sub_args["<repo>"]
-            repo = repo if repo else "all"
+        repos = sub_args["<repo>"]
+        repos = repos or None
 
-            retcode = core.update(repo)
+        retcode = core.update(repos)
 
     if cli_args["<command>"] == "init":
         core = Sgit()
 
         retcode = core.init_repo()
+
+    if cli_args["<command>"] == "fetch":
+        core = Sgit()
+
+        repos = sub_args["<repo>"]
+        repos = repos or None
+
+        retcode = core.fetch(repos)
 
     return retcode
 
