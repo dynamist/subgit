@@ -401,6 +401,18 @@ class Sgit():
                         branch=clone_rev,
                     )
                     print(f'Successfully cloned repo "{name}" from remote server')
+                except git.exc.GitCommandError as e:
+                    # We assume that retcode 128 means you try to clone into a bare repo and we must
+                    # attempt to clone it w/o a specific branch identifier.
+                    if e.status == 128:
+                        try:
+                            repo = Repo.clone_from(
+                                config["repos"][name]["clone-url"],
+                                repo_path,
+                            )
+                            print(f'Successfully cloned into bare git repo "{name}" from remote server')
+                        except Exception as e:
+                            raise SgitException(f'Clone into bare git repo "{name}" failed, exception: {e}')
                 except Exception as e:
                     raise SgitException(f'Clone "{name}" failed, exception: {e}')
             else:
