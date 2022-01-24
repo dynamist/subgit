@@ -3,14 +3,16 @@
 # python std lib
 import logging
 import os
+import re
 import sys
 
 # sgit imports
-from sgit.exceptions import SgitException, SgitConfigException
+from sgit.exceptions import SgitException, SgitConfigException, SgitConfigException
 
 # 3rd party imports
-import ruamel
 import git
+import ruamel
+import semver
 from git import Repo, Git
 from ruamel import yaml
 
@@ -455,13 +457,118 @@ class Sgit():
                     ]
                     print(f"DEBUG: {tags}")
 
+                    if len(tags) == 0:
+                        raise SgitRepoException(f"Revision set to a tag, but no tags exists within the selected git repo '{name}'")
+
                     # Extract the sub tag data
                     tag_revision = revision["tag"]
+
+                    # Special case if using the reserved tag keyword "latest"
+                    if tag_revision == "latest":
+                        print(f"DEBUG: Keyword 'latest' used for tag. Attempting to parse")
+
+                        # Pre-process tags list by running tag-filter-regex to filter out unwanted tags from the list
+                        tag_filter_regex = revision.get("tag-filter-regex", None)
+
+                        if tag_filter_regex:
+                            print(f"INFO: 'tag-regex-filter' option set for git repo {name}, filtering out unwanted tags based on regex")
+
+                            if not isinstance(tag_filter_regex, list):
+                                raise SgitConfigException(f"Value for option 'tag-filter-regex' must be a list and not {type(tag_filter_regex)}")
+
+                            filtered_tags = []
+
+                            for tag in tags:
+                                for filter_regex in tag_filter_regex:
+                                    print(f"DEBUG: Filtering tag '{tag}' against regex '{filter_regex}")
+                                    if re.match(filter_regex, tag):
+                                        filtered_tags.append(tag)
+                                        break
+
+                            print(f"INFO: filtered_tags result: {filtered_tags}")
+
+                            # Set result back for next step in pre-processing
+                            tags = filtered_tags
+
+                        # Pre-process tags list by running tag-regex filtering on all values
+                        tag_clean_regex = revision.get('tag-clean-regex', None)
+
+                        if tag_clean_regex:
+                            print(f"INFO: Option 'tag-clean-regex' set for repo {name}, filtering out tags based on regex")
+
+                            if not isinstance(tag_clean_regex, list):
+                                raise SgitConfigException(f"Value for option 'tag-clean-regex' must be a list and not {type(tag_clean_regex)}")
+
+                            cleaned_tags = []
+
+                            for tag in tags:
+                                cleaned = False
+
+                                for clean_regex in tag_clean_regex:
+                                    print(f"DEBUG: Cleaning tag '{tag}' against regex '{clean_regex}")
+                                    match_result = re.match(clean_regex, tag)
+                                    if match_result:
+                                        print(f"Clean match result hit: {match_result}")
+                                        cleaned_tags.append(match_result.groups()[0])
+                                        cleaned = True
+                                        break
+
+                                if not cleaned:
+                                    cleaned_tags.append(tag)
+
+                            print(f"INFO: Cleaned tags result: {cleaned_tags}")
+
+                            tags = cleaned_tags
+
+                        # supported "tag-order" values is "semver" and "time"
+                        tag_order_option = revision.get("tag-order", "semver")
+
+                        selected_tag = None
+
+                        if tag_order_option == "time":
+                            # Pick the first item from the pre-sorted tags list
+                            selected_tag = tags[0]
+                        elif tag_order_option == "semver":
+                            # Special case as if we only have one tag we can't compare it to anything else
+                            if len(tags) == 1:
+                                selected_tag = tags[0]
+                            else:
+                                tmp_latest = tags[0]
+
+                                for i, item in enumerate(tags):
+                                    left = tmp_latest
+                                    try:
+                                        right = tags[i + 1]
+                                    except IndexError:
+                                        # We have itterated all possible values
+                                        break
+
+                                    print(f"DEBUG: Comparing {left} <--> {right}")
+
+                                    compare_value = semver.compare(left, right)
+
+                                    if compare_value == 1:
+                                        tmp_latest = left
+                                        print(f"Left is higher then right")
+                                    elif compare_value == -1:
+                                        tmp_latest = right
+                                        print(f"Right is higher then left")
+                                    else:
+                                        print(f"DEBUG: tag values are the same")
+
+                                print(f"DEBUG: tmp_latest {tmp_latest}")
+
+                                selected_tag = tmp_latest
+                        else:
+                            raise SgitConfigException(f"Value for 'tag-order: {tag_order_option}' for repo {name} must be either 'semver' or 'time'")
+
+                        tag_revision = selected_tag
 
                     if tag_revision in tags:
                         g.checkout(tag_revision)
                         print(f'INFO: Checked out tag "{tag_revision}" for repo "{name}"')
                         print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
+                        print(f"INFO: Current commit summary on HEAD: {str(repo.head.commit.summary)}")
                     else:
                         print(f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"')
                         print(f"")
