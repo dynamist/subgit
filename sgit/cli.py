@@ -205,4 +205,4 @@ def cli_entrypoint():
             print(f"Exception type : {ex_type.__name__}")
             print(f"EXCEPTION MESSAGE: {ex_value}")
             print(f"To get more detailed exception set environment variable 'DEBUG=1'")
-            print(f"To PDB debug")
+            print(f"To PDB debug set environment variable 'PDB=1'")
