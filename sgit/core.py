@@ -22,7 +22,9 @@ DEFAULT_REPO_CONTENT = "repos: { }\n"
 
 
 class Sgit():
-    def __init__(self, config_file_path=None):
+    def __init__(self, config_file_path=None, answer_yes=False):
+        self.answer_yes = answer_yes
+
         if not config_file_path:
             self.sgit_config_file_name = ".sgit.yml"
 
@@ -153,8 +155,8 @@ class Sgit():
     def yes_no(self, question):
         print(question)
 
-        if "BATCH" in os.environ:
-            print(f"INFO: batch mode")
+        if self.answer_yes:
+            print(f"INFO: Automatically answer yes to question")
             return True
 
         answer = input("(y/n) << ")

@@ -155,6 +155,14 @@ pip install -e ".[dev]"
 To run all unit tests run `pytest` from the root folder
 
 
+### Extra development option flags
+
+You can currently use the following envroinment flags `DEBUG=1` to get additional debugging and detailed information about any uncaught exceptions and detailed information about cli flags etc.
+
+To get into a PDB debugger on any uncaught exceptions you can set the environment flag `PDB=1` and that will take you into a pdb debugger at the cli exit point so you can dig into any issues you might have.
+
+
+
 ## Project details
 
 |   |   |

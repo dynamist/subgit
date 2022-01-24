@@ -25,6 +25,7 @@ Commands:
     fetch         Runs git fetch on all repos
 
 Options:
+    -y, --yes       Answers yes to all questions (use with caution)
     --help          Show this help message and exit
     --version       Display the version number and exit
 """
@@ -130,9 +131,9 @@ def run(cli_args, sub_args):
 
     from sgit.core import Sgit
 
-    if cli_args["<command>"] == "repo":
-        core = Sgit()
+    core = Sgit(answer_yes=cli_args["--yes"])
 
+    if cli_args["<command>"] == "repo":
         if sub_args["add"]:
             retcode = core.repo_add(
                 sub_args["<name>"], sub_args["<url>"], sub_args["<rev>"] or "master"
@@ -165,25 +166,18 @@ def run(cli_args, sub_args):
             retcode = core.repo_disable(repo_name)
 
     if cli_args["<command>"] == "list":
-        core = Sgit()
         retcode = core.repo_list()
 
     if cli_args["<command>"] == "update":
-        core = Sgit()
-
         repos = sub_args["<repo>"]
         repos = repos or None
 
         retcode = core.update(repos)
 
     if cli_args["<command>"] == "init":
-        core = Sgit()
-
         retcode = core.init_repo()
 
     if cli_args["<command>"] == "fetch":
-        core = Sgit()
-
         repos = sub_args["<repo>"]
         repos = repos or None
 
@@ -198,12 +192,17 @@ def cli_entrypoint():
         cli_args, sub_args = parse_cli()
         exit_code = run(cli_args, sub_args)
         sys.exit(exit_code)
-    except Exception:
-        if not "BATCH" in os.environ:
+    except Exception as e:
+        ex_type, ex_value, ex_traceback = sys.exc_info()
+
+        if "DEBUG" in os.environ:
             extype, value, tb = sys.exc_info()
             traceback.print_exc()
-            pdb.post_mortem(tb)
+            if "PDB" in os.environ:
+                pdb.post_mortem(tb)
             raise
         else:
-            print(f"INFO: batch mode")
-            print(f"ERROR: fatal exception")
+            print(f"Exception type : {ex_type.__name__}")
+            print(f"EXCEPTION MESSAGE: {ex_value}")
+            print(f"To get more detailed exception set environment variable 'DEBUG=1'")
+            print(f"To PDB debug")
