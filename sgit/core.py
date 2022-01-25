@@ -7,20 +7,19 @@ import re
 import sys
 
 # sgit imports
-from sgit.exceptions import SgitException, SgitConfigException, SgitConfigException
+from sgit.constants import *
+from sgit.exceptions import *
 
 # 3rd party imports
 import git
-import ruamel
 import semver
 from git import Repo, Git
 from ruamel import yaml
+from ruamel.yaml import Loader
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-DEFAULT_REPO_CONTENT = "repos: { }\n"
 
 
 class Sgit():
@@ -60,7 +59,7 @@ class Sgit():
             sys.exit(1)
 
         with open(self.sgit_config_file_path, "r") as stream:
-            return yaml.load(stream, Loader=ruamel.yaml.Loader)
+            return yaml.load(stream, Loader=Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
 

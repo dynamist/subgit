@@ -12,3 +12,10 @@ class SgitConfigException(SgitException):
 # we attempt to make an operation on it.
 class SgitRepoException(SgitException):
     pass
+
+
+__all__ = [
+    "SgitException",
+    "SgitConfigException",
+    "SgitRepoException",
+]
