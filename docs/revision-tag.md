@@ -173,6 +173,6 @@ sgit repo set pykwalify tag latest
 sgit update
 
 # If you want the additional options with "tag-filter-regex", "tag-clean-regex" and "tag-order"
-# you must add them manually and then update your clone with
+# you must add them manually to your .sgit.yml config file and then update your clone with
 sgit update
 ```
