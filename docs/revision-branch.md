@@ -1,6 +1,6 @@
 # Revision: branch
 
-If you want to specify the cloning an dupdating of a git repo based on a git branch you can define it with the following syntax.
+If you want to specify the cloning and updating of a git repo based on a git branch you can define it with the following syntax.
 
 ```yaml
 repos:
@@ -10,9 +10,9 @@ repos:
       branch: master
 ```
 
-This will clone the git repo and for each `sgit update` you make after the intiail clone, it will do a `git pull` on the given branch to move your clone to the latest commit on this branch.
+This will clone the git repo and for each `sgit update` you make after the initial clone, it will do a git pull on the given branch to move your clone to the latest commit on this branch.
 
-In the case you change the branch to a new one, it will fetch the latest commits for that other branch and do a `git checkout` of it locally.
+In the case you change the branch to a new one, it will fetch the latest commits for that other branch and do a git checkout of it locally.
 
 
 ## CLI

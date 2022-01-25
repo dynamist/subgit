@@ -1,6 +1,6 @@
 # Revision: tag
 
-If you want to use the more specialized and advance option for parsing and selecting a specific tag from a git repo then you should use the tag revision option.
+If you want to use the more specialized and advanced option for parsing and selecting a specific tag from a git repo then you should use the tag revision option.
 
 This is the following syntax and extra options. More detailed examples is further down in this document.
 
@@ -20,7 +20,7 @@ repos:
       # Pre-processes the tags before selection step. Create a regex with a group that you want
       # to extract the semver data from. Multiple regex values is supported but first value matching
       # will be used before moving on to next tag.
-      # This step is usefull to remove and prefix or suffixes from tags and only care about the semver part when comparing tags
+      # This step is useful to remove any prefix or suffix from tags, only affecting the semver part when comparing tags
       tag-clean-regex:
         # Run regex.match() to extract out value if possible, otherwise keep it
         - "v([0-9].[0-9].[0-9])"
