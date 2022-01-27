@@ -40,6 +40,9 @@ setup(
             "ptpython",
             "ptpdb",
         ],
+        "validation": [
+            "pykwalify",
+        ]
     },
     classifiers=[
         # "Development Status :: 1 - Planning",
