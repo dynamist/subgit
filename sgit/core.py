@@ -499,8 +499,11 @@ class Sgit():
                     #
                     # Main tag parsing logic
                     #
-                    git_repo_tags = [str(tag) for tag in repo.tags]
-                    print(git_repo_tags)
+                    git_repo_tags = [
+                        str(tag)
+                        for tag in repo.tags
+                    ]
+                    print(f"DEBUG: Raw git tags from git repo {git_repo_tags}")
 
                     filter_output = self._filter(git_repo_tags, filter_config)
 
@@ -516,13 +519,16 @@ class Sgit():
                     if not select_output:
                         raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
 
+                    print(f"INFO: Attempting to checkout tag '{select_output}' for repo '{name}'")
+
                     # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
                     # inside the git repo, we will get sub exceptions raised by git module.
                     g.checkout(select_output)
 
-                    print(f'INFO: Checked out tag "{select_output}" for repo "{name}"')
+                    print(f"INFO: Checked out tag '{select_output}' for repo '{name}'")
                     print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
-                    print(f"INFO: Current commit summary on HEAD: {str(repo.head.commit.summary)}")
+                    print(f"INFO: Current commit summary on HEAD: ")
+                    print(f"INFO:     {str(repo.head.commit.summary)}")
 
     def _filter(self, sequence, regex_list):
         """
@@ -539,7 +545,7 @@ class Sgit():
         """
         filtered_sequence = []
 
-        print(f"INFO: Running clean step on data")
+        print(f"DEBUG: Running clean step on data")
 
         if not isinstance(regex_list, list):
             raise SgitConfigException(f"sequence for clean step must be a list of items")
@@ -565,7 +571,7 @@ class Sgit():
                 match_result = re.match(filter_regex, item)
 
                 if match_result:
-                    print(f"Clean match result hit: {match_result}")
+                    print(f"DEBUG: Filter match result hit: {match_result}")
 
                     # If the regex contains a group that is what we want to extract out and
                     # add to our filtered output list of results
@@ -576,7 +582,7 @@ class Sgit():
 
                     break
 
-        print(f"INFO: Cleaned items result: {filtered_sequence}")
+        print(f"DEBUG: Filter items result: {filtered_sequence}")
 
         return filtered_sequence
 
@@ -596,7 +602,7 @@ class Sgit():
         ordered_sequence = []
 
         if method == OrderAlgorithms.SEMVER:
-            print(f"INFO: Ordering sequence of items by PEP440 SEMVER logic")
+            print(f"DEBUG: Ordering sequence of items by PEP440 SEMVER logic")
             print(sequence)
 
             ordered_sequence = list(
@@ -609,7 +615,7 @@ class Sgit():
         elif method == OrderAlgorithms.TIME:
             # When sorting by time the latest item in the sequence with the highest or most recent time
             # will be on index[0] in the returned sequence.
-            print(f"INFO: Ordering sequence of items by TIME they wore created, input:")
+            print(f"DEBUG: Ordering sequence of items by TIME they was created, input:")
             print(sequence)
 
             ordered_sequence = list(
@@ -620,7 +626,7 @@ class Sgit():
                 )
             )
         elif method == OrderAlgorithms.ALPHABETICAL:
-            print(f"INFO: Order sequence of items by ALPHABETICAL string order")
+            print(f"DEBUG: Order sequence of items by ALPHABETICAL string order")
             print(sequence)
         else:
             raise SgitConfigException(f"Unsupported ordering algorithm selected")
