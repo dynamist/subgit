@@ -608,7 +608,6 @@ class Sgit():
             ordered_sequence = list(
                 sorted(
                     sequence,
-                    # reverse=True,
                     key=lambda x: version.Version(x)
                 )
             )
@@ -621,13 +620,15 @@ class Sgit():
             ordered_sequence = list(
                 sorted(
                     sequence,
-                    # reverse=True,
                     key=lambda t: t[1],
                 )
             )
         elif method == OrderAlgorithms.ALPHABETICAL:
             print(f"DEBUG: Order sequence of items by ALPHABETICAL string order")
             print(sequence)
+
+            # By default sorted will do alphabetical sort
+            ordered_sequence = list(sorted(sequence))
         else:
             raise SgitConfigException(f"Unsupported ordering algorithm selected")
 

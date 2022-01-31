@@ -112,6 +112,12 @@ def test_order_semver(sgit):
     ) == ["0.9.0", "1.0.0", "1.1.0"]
 
 
+def test_order_alphabetical(sgit):
+    assert sgit._order(["c", "a", "b"], OrderAlgorithms.ALPHABETICAL) == ["a", "b", "c"]
+    
+    assert sgit._order(["3", "1", "2"], OrderAlgorithms.ALPHABETICAL) == ["1", "2", "3"]
+
+
 def test_select_semver(sgit):
     # Test that basic cases of PEP440 semver checks works as expected when we select that method
     assert sgit._select(
