@@ -7,8 +7,6 @@ import re
 import sys
 import traceback
 
-# sgit imports
-
 # 3rd party imports
 from docopt import docopt
 
@@ -33,13 +31,8 @@ Options:
 sub_repo_args = """
 Usage:
     sgit repo add <name> <url> [<rev>] [options]
-    sgit repo remove <name> [options]
-    sgit repo rename <from> <to> [options]
     sgit repo set <name> branch <branch> [options]
     sgit repo set <name> tag <tag> [options]
-    sgit repo set <name> url <url> [options]
-    sgit repo enable <name> [options]
-    sgit repo disable <name> [options]
 
 Options:
     <rev>               Revision to set for a given repo [default: master]
@@ -140,34 +133,25 @@ def run(cli_args, sub_args):
     if cli_args["<command>"] == "repo":
         if sub_args["add"]:
             retcode = core.repo_add(
-                sub_args["<name>"], sub_args["<url>"], sub_args["<rev>"] or "master"
+                sub_args["<name>"],
+                sub_args["<url>"],
+                sub_args["<rev>"] or "master",
             )
-        elif sub_args["remove"]:
-            retcode = core.repo_remove(sub_args["<name>"])
         elif sub_args["set"]:
             if sub_args["tag"]:
-                retcode = core.repo_set(sub_args["<name>"], "tag", sub_args["<tag>"])
+                retcode = core.repo_set(
+                    sub_args["<name>"],
+                    "tag",
+                    sub_args["<tag>"]
+                )
             elif sub_args["branch"]:
                 retcode = core.repo_set(
-                    sub_args["<name>"], "branch", sub_args["<branch>"]
+                    sub_args["<name>"],
+                    "branch",
+                    sub_args["<branch>"],
                 )
-            elif sub_args["url"]:
-                retcode = core.repo_set(sub_args["<name>"], "url", sub_args["<url>"])
             else:
                 retcode = 1
-        elif sub_args["rename"]:
-            from_name = sub_args["<from>"]
-            to_name = sub_args["<to>"]
-
-            retcode = core.repo_rename(from_name, to_name)
-        elif sub_args["enable"]:
-            repo_name = sub_args["<name>"]
-
-            retcode = core.repo_enable(repo_name)
-        elif sub_args["disable"]:
-            repo_name = sub_args["<name>"]
-
-            retcode = core.repo_disable(repo_name)
 
     if cli_args["<command>"] == "list":
         retcode = core.repo_list()

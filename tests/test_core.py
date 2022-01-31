@@ -147,80 +147,18 @@ def test_repo_add(sgit):
     assert retcode == 1
 
 
-def test_repo_remove(sgit):
-    retcode = sgit.init_repo()
-    assert retcode == None
-
-    config = sgit._get_config_file()
-    assert "foobar" not in config["repos"]
-
-    ## Initially there is no repo added so it shold fail out
-    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
-        sgit.repo_remove(None)
-
-    assert pytest_wrapped_e.type == SgitConfigException
-
-    ## If we provide a name that do not exist in the config file
-    retcode = sgit.repo_remove("foobar")
-    assert retcode == 1
-
-    ## Add a repo and try to remove it
-    sgit.repo_add("foobar", "foo@bar.com", "master")
-    retcode = sgit.repo_remove("foobar")
-    assert retcode == None
-
-    config = sgit._get_config_file()
-    assert "foobar" not in config["repos"]
-
-
 def test_repo_set(sgit):
     retcode = sgit.init_repo()
     assert retcode == None
 
-    ## Test that providing bad types fail in exception
-    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
-        sgit.repo_remove(None)
-
-    assert pytest_wrapped_e.type == SgitConfigException
-
-    ## When providing a repo name that do not exists it should fail out
-    retcode = sgit.repo_remove("foobar")
-    assert retcode == 1
-
     ## Add a repo with certain attributes. Update them and test they got saved
     sgit.repo_add("1a", "1a", "1c")
-
-    retcode = sgit.repo_set("1a", "url", "2c")
-    assert retcode is None
 
     retcode = sgit.repo_set("1a", "branch", "2d")
     assert retcode is None
 
     config = sgit._get_config_file()
-    assert config["repos"]["1a"]["clone-url"] == "2c"
     assert config["repos"]["1a"]["revision"]["branch"] == "2d"
-
-
-def test_repo_rename(sgit):
-    retcode = sgit.init_repo()
-    assert retcode == None
-
-    ## If source and destination repo name is the same, throw error
-    retcode = sgit.repo_rename("foobar", "foobar")
-    assert retcode == 1
-
-    ## If destination repo name already exists then throw error
-    sgit.repo_add("qwerty", "qwe@rty.se", "master")
-    retcode = sgit.repo_rename("foobar", "qwerty")
-    assert retcode == 2
-
-    sgit.repo_add("foobar", "bar@foo.se", "master")
-    retcode = sgit.repo_rename("foobar", "barfoo")
-    assert retcode is None
-
-    config = sgit._get_config_file()
-    assert "foobar" not in config["repos"]
-    assert "barfoo" in config["repos"]
 
 
 def test_repo_update(sgit, mocker):

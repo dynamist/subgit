@@ -13,7 +13,6 @@ from sgit.exceptions import *
 
 # 3rd party imports
 import git
-import semver
 from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
@@ -114,22 +113,6 @@ class Sgit():
 
         print(f'Successfully added new repo "{name}"')
 
-    def repo_remove(self, name):
-        if not name:
-            raise SgitConfigException(f'Name "{name}" must be set to sometihng')
-
-        config = self._get_config_file()
-
-        if name not in config.get("repos", []):
-            print(f'No repo with name "{name}" found in config file')
-            return 1
-
-        del config["repos"][name]
-
-        self._dump_config_file(config)
-
-        print(f'Removed repo "{name}" from config file')
-
     def repo_set(self, name, attrib, value):
         if not attrib or not value:
             raise SgitConfigException(f'Attrib "{attrib}" or "{value}" must be set')
@@ -148,9 +131,6 @@ class Sgit():
             del config["repos"][name]["revision"]["branch"]
             config["repos"][name]["revision"]["branch"] = value
             print(f'Set branch for repo "{name}" to -> "{value}"')
-        elif attrib == "url":
-            config["repos"][name]["clone-url"] = value
-            print(f'Set git clone-url for repo "{name}" to -> "{value}"')
         else:
             print(f"Unsupported set attribute operation")
             return 1
@@ -217,78 +197,6 @@ class Sgit():
 
         print(f"Fetching for all repos completed")
         return 0
-
-
-    def repo_rename(self, from_name, to_name):
-        print(f'DEBUG: Rename repo "{from_name}" to "{to_name}')
-
-        config = self._get_config_file()
-
-        current_repos = config.get("repos", [])
-
-        if from_name == to_name:
-            print(f"ERROR: from name and to name can't be the same value")
-            return 1
-
-        if to_name in current_repos:
-            print(f"ERROR: Destination name already exists in config")
-            return 2
-
-        # Rename action
-        config["repos"][to_name] = config["repos"][from_name]
-
-        # Remove old repo name
-        del config["repos"][from_name]
-
-        self._dump_config_file(config)
-
-        print(f'INFO: Renamed repo from "{from_name}" to "{to_name}"')
-
-    def repo_enable(self, repo_name):
-        """
-        Will set the option `enable: true` for a given repo
-
-        Returns 0 if enable repo was successfull
-        Returns 1 if provided repo name was not found in config
-        """
-        print(f"DEBUG: Enable repo {repo_name}")
-
-        config = self._get_config_file()
-
-        current_repos = config.get("repos", [])
-
-        if repo_name not in current_repos:
-            print(f"ERROR: Repo name not found in config file")
-            return 1
-
-        config["repos"][repo_name]["enabled"] = True
-
-        self._dump_config_file(config)
-
-        print(f"INFO: Enabled repo Successfully")
-
-    def repo_disable(self, repo_name):
-        """
-        Will set the option `disable: true` for a given repo
-
-        Returns 0 if disable repo was successfull
-        Returns 1 if provided repo name was not found in config
-        """
-        print(f"DEBUG: Enable repo {repo_name}")
-
-        config = self._get_config_file()
-
-        current_repos = config.get("repos", [])
-
-        if repo_name not in current_repos:
-            print(f"ERROR: Repo name not found in config file")
-            return 1
-
-        config["repos"][repo_name]["enabled"] = False
-
-        self._dump_config_file(config)
-
-        print(f"INFO: Disable repo Successfully")
 
     def _get_active_repos(self, config):
         """
