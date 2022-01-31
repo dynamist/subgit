@@ -25,7 +25,6 @@ Commands:
     fetch         Runs git fetch on all repos
 
 Options:
-    -y, --yes       Answers yes to all questions (use with caution)
     --help          Show this help message and exit
     --version       Display the version number and exit
 """
@@ -44,6 +43,7 @@ Usage:
 
 Options:
     <rev>               Revision to set for a given repo [default: master]
+    -y, --yes           Answers yes to all questions (use with caution)
     -h, --help          Show this help message and exit
 """
 
@@ -54,6 +54,7 @@ Usage:
 
 Options:
     <repo>      Name of repo to update
+    -y, --yes   Answers yes to all questions (use with caution)
     -h, --help  Show this help message and exit
 """
 
@@ -63,6 +64,7 @@ Usage:
     sgit list [options]
 
 Options:
+    -y, --yes   Answers yes to all questions (use with caution)
     -h, --help  Show this help message and exit
 """
 
@@ -72,6 +74,7 @@ Usage:
     sgit init [options]
 
 Options:
+    -y, --yes   Answers yes to all questions (use with caution)
     -h, --help  Show this help message and exit
 """
 
@@ -81,6 +84,7 @@ Usage:
     sgit fetch [<repo> ...] [options]
 
 Options:
+    -y, --yes       Answers yes to all questions (use with caution)
     -h, --help  Show this help message and exit
 """
 
@@ -131,7 +135,7 @@ def run(cli_args, sub_args):
 
     from sgit.core import Sgit
 
-    core = Sgit(answer_yes=cli_args["--yes"])
+    core = Sgit(answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "repo":
         if sub_args["add"]:
