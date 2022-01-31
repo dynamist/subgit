@@ -124,13 +124,13 @@ def test_select_semver(sgit):
         ["1.1.0", "1.0.0", "0.9.0"],
         ">=1.0.0",
         SelectionMethods.SEMVER,
-    ) == ["1.1.0", "1.0.0"]
+    ) == "1.0.0"
 
     assert sgit._select(
         ["1.1.0", "1.0.0", "0.9.0"],
         "<1.0.0",
         SelectionMethods.SEMVER,
-    ) == ["0.9.0"]
+    ) == "0.9.0"
 
     # Test reserved keywords "first" and "last"
     assert sgit._select(
