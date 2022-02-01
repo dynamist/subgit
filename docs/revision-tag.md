@@ -7,7 +7,7 @@ This is the following syntax and extra options. More detailed examples is furthe
 ```yaml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         # One regex string or a list of regex strings is supported here
@@ -73,7 +73,7 @@ Basic example. This example will not filter out any items, it will order them by
 # .sgit.yml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         select: last
@@ -93,7 +93,7 @@ This example will ignore the semver and order all tags by time and pick the last
 # .sgit.yml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         order: time
@@ -115,7 +115,7 @@ parsing for the latest tag. It will default to semver comparison and select the 
 # .sgit.yml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         # Filter out unwanted tags based on regex match and grouping.
@@ -139,7 +139,7 @@ In this example we want to have the latest semver version. It will extract out t
 # .sgit.yml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         # Filter out the "v" from some tags, and keep the regular semver tags
@@ -163,7 +163,7 @@ In this example we can limit the version we want to select to a older tag based 
 # .sgit.yml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
         select: "<1.0.0"

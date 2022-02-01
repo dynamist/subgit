@@ -87,7 +87,7 @@ class Sgit():
         for repo_name, repo_data in repos.items():
             print(f"")
             print(f" - {repo_name}")
-            print(f"    URL: {repo_data.get('clone-url')}")
+            print(f"    URL: {repo_data.get('url')}")
 
             if "branch" in repo_data["revision"]:
                 print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
@@ -107,7 +107,7 @@ class Sgit():
             return 1
 
         # TODO: It is bad that each repo will default to a branch type and not a tag type
-        config["repos"][name] = {"clone-url": url, "revision": {"branch": revision}}
+        config["repos"][name] = {"url": url, "revision": {"branch": revision}}
 
         self._dump_config_file(config)
 
@@ -309,7 +309,7 @@ class Sgit():
 
                 try:
                     repo = Repo.clone_from(
-                        config["repos"][name]["clone-url"],
+                        config["repos"][name]["url"],
                         repo_path,
                         branch=clone_rev,
                     )
@@ -320,7 +320,7 @@ class Sgit():
                     if e.status == 128:
                         try:
                             repo = Repo.clone_from(
-                                config["repos"][name]["clone-url"],
+                                config["repos"][name]["url"],
                                 repo_path,
                             )
                             print(f'Successfully cloned into bare git repo "{name}" from remote server')

@@ -28,15 +28,15 @@ def user_data():
 
     repository_test_data = {
         working_gitname: {
-            "clone-url": working_giturl,
+            "url": working_giturl,
             "revision": {"branch": working_gitrev},
         },
         branch_gitname: {
-            "clone-url": branch_giturl,
+            "url": branch_giturl,
             "revision": {"branch": branch_gitrev},
         },
         non_working_gitname: {
-            "clone-url": non_working_giturl,
+            "url": non_working_giturl,
             "revision": {"branch": non_working_gitrev},
         },
     }
@@ -139,7 +139,7 @@ def test_repo_add(sgit):
 
     saved_data = sgit._get_config_file()
     assert saved_data == {
-        "repos": {name: {"clone-url": gitrepo, "revision": {"branch": revision}}}
+        "repos": {name: {"url": gitrepo, "revision": {"branch": revision}}}
     }
 
     ## If rerunning the same config then it should cause an error

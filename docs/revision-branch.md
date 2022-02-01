@@ -5,7 +5,7 @@ If you want to specify the cloning and updating of a git repo based on a git bra
 ```yaml
 repos:
   pykwalify:
-    clone-url: git@github.com:Grokzen/pykwalify.git
+    url: git@github.com:Grokzen/pykwalify.git
     revision:
       branch: master
 ```
