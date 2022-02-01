@@ -26,6 +26,7 @@ setup(
         "docopt>=0.6.2",
         "ruamel.yaml>=0.16.0",
         "gitpython>=3.1.0",
+        "packaging>=21.3",
     ],
     python_requires=">=3.6",
     extras_require={
@@ -36,7 +37,12 @@ setup(
         ],
         "dev": [
             "pylint",
+            "ptpython",
+            "ptpdb",
         ],
+        "validation": [
+            "pykwalify",
+        ]
     },
     classifiers=[
         # "Development Status :: 1 - Planning",

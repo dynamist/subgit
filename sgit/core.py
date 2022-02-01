@@ -3,22 +3,27 @@
 # python std lib
 import logging
 import os
+import re
 import sys
 
 # sgit imports
-from sgit.exceptions import SgitException, SgitConfigException
+from sgit.constants import *
+from sgit.enums import *
+from sgit.exceptions import *
 
 # 3rd party imports
-import ruamel
 import git
+import semver
 from git import Repo, Git
+from packaging import version
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 from ruamel import yaml
+from ruamel.yaml import Loader
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-DEFAULT_REPO_CONTENT = "repos: { }\n"
 
 
 class Sgit():
@@ -58,7 +63,7 @@ class Sgit():
             sys.exit(1)
 
         with open(self.sgit_config_file_path, "r") as stream:
-            return yaml.load(stream, Loader=ruamel.yaml.Loader)
+            return yaml.load(stream, Loader=Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
 
@@ -443,29 +448,244 @@ class Sgit():
                     print(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
                     print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
                 elif "tag" in revision:
-                    print("TODO: Handle tag update case")
+                    #
+                    # Parse and extract out all relevant config options and determine if they are nested
+                    # dicts or single values. The values will later be used as input into each operation.
+                    #
+                    tag_config = revision["tag"]
 
-                    # Fetch all tags from the git repo and order them by the date they was made.
-                    # The most recent tag is first in the list
-                    tags = [
-                        str(tag)
-                        for tag in reversed(
-                            sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-                        )
-                    ]
-                    print(f"DEBUG: {tags}")
+                    # If "filter" key is not specified then we should not filter anything and keep all values
+                    filter_config = tag_config.get("filter", [])
 
-                    # Extract the sub tag data
-                    tag_revision = revision["tag"]
+                    # If we do not have a list, convert it internally first
+                    if isinstance(filter_config, str):
+                        filter_config = [filter_config]
 
-                    if tag_revision in tags:
-                        g.checkout(tag_revision)
-                        print(f'INFO: Checked out tag "{tag_revision}" for repo "{name}"')
-                        print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
+                    if not isinstance(filter_config, list):
+                        raise SgitConfigException(f"filter option must be a list of items or a single string")
+
+                    order_config = tag_config.get("order", None)
+                    if order_config is None:
+                        order_algorithm = OrderAlgorithms.SEMVER
                     else:
-                        print(f'ERROR: Specified tag "{tag_revision}" do not exists inside repo "{name}"')
-                        print(f"")
-                        print(f" - Available tags")
+                        order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
 
-                        for tag in tags:
-                            print(f"   - {tag}")
+                        if order_algorithm is None:
+                            raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
+
+                    select_config = tag_config.get("select", None)
+                    select_method = None
+                    if select_config is None:
+                        raise SgitConfigException(f"select key is required in all tag revisions")
+
+                    # We have sub options to extract out
+                    if isinstance(select_config, dict):
+                        select_config = select_config["value"]
+                        select_method_value = select_config["method"]
+
+                        select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
+
+                        if select_method is None:
+                            raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
+                    else:
+                        select_method = SelectionMethods.SEMVER
+
+                    print(f"DEBUG: {filter_config}")
+                    print(f"DEBUG: {order_config}")
+                    print(f"DEBUG: {order_algorithm}")
+                    print(f"DEBUG: {select_config}")
+                    print(f"DEBUG: {select_method}")
+
+                    #
+                    # Main tag parsing logic
+                    #
+                    git_repo_tags = [
+                        str(tag)
+                        for tag in repo.tags
+                    ]
+                    print(f"DEBUG: Raw git tags from git repo {git_repo_tags}")
+
+                    filter_output = self._filter(git_repo_tags, filter_config)
+
+                    # # FIXME: If we choose time as sorting method we must convert the data to a new format
+                    # #        that the order algorithm allows.
+                    # if order_algorithm == OrderAlgorithms.TIME:
+                    #     pass
+
+                    order_output = self._order(filter_output, order_algorithm)
+                    select_output = self._select(order_output, select_config, select_method)
+                    print(select_output)
+
+                    if not select_output:
+                        raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
+
+                    print(f"INFO: Attempting to checkout tag '{select_output}' for repo '{name}'")
+
+                    # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
+                    # inside the git repo, we will get sub exceptions raised by git module.
+                    g.checkout(select_output)
+
+                    print(f"INFO: Checked out tag '{select_output}' for repo '{name}'")
+                    print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
+                    print(f"INFO: Current commit summary on HEAD: ")
+                    print(f"INFO:     {str(repo.head.commit.summary)}")
+
+    def _filter(self, sequence, regex_list):
+        """
+        Given a sequence of git objects, clean them against all regex items in the provided regex_list.
+
+        Cleaning one item in the seuqence means that we can extract out any relevant information from our sequence
+        in order to make further ordering and selection at later stages.
+
+        The most basic example is to make semver comparisons we might need to remove prefixes and suffixes
+        from the tag name in order to make a semver comparison.
+
+        v1.0.0 would be cleaned to 1.0.0, and 1.1.0-beta1 would be cleaned to 1.1.0 and we can then make a semver
+        comparison between them in order to find out the latest tag item.
+        """
+        filtered_sequence = []
+
+        print(f"DEBUG: Running clean step on data")
+
+        if not isinstance(regex_list, list):
+            raise SgitConfigException(f"sequence for clean step must be a list of items")
+
+        if not isinstance(regex_list, list):
+            raise SgitConfigException(f"regex_list for clean step must be a list of items")
+
+        # If we have no regex to filter against, then return original list unaltered
+        if len(regex_list) == 0:
+            return sequence
+
+        for item in sequence:
+            for filter_regex in regex_list:
+                if not isinstance(filter_regex, str):
+                    raise SgitConfigException(f"ERROR: filter regex must be a string")
+
+                # A empty regex string is not valid
+                if filter_regex.strip() == "":
+                    raise SgitConfigException(f"ERROR: Empty regex filter string is not allowed")
+
+                print(f"DEBUG: Filtering item '{item}' against regex '{filter_regex}")
+
+                match_result = re.match(filter_regex, item)
+
+                if match_result:
+                    print(f"DEBUG: Filter match result hit: {match_result}")
+
+                    # If the regex contains a group that is what we want to extract out and
+                    # add to our filtered output list of results
+                    if len(match_result.groups()) > 0:
+                        filtered_sequence.append(match_result.groups()[0])
+                    else:
+                        filtered_sequence.append(item)
+
+                    break
+
+        print(f"DEBUG: Filter items result: {filtered_sequence}")
+
+        return filtered_sequence
+
+    def _order(self, sequence, method):
+        """
+        Given a sequence of git objects, order them based on what ordering algorithm selected.
+
+        Some algorithms might require additional information in order to perform the ordering properly,
+        in these cases each item in the sequence should be a tuple where the first value is the key or primary
+        data we want to sort on, like tag name. But the second and/or third item in the tuple can be for example
+        a timestamp or other metadata that we need to use within our algorithm to order them properly.
+
+        Supports OrderAlgorithm methods: ALPHABETICAL, TIME, SEMVER
+
+        Returns a new list with the sorted sequence of items
+        """
+        ordered_sequence = []
+
+        if method == OrderAlgorithms.SEMVER:
+            print(f"DEBUG: Ordering sequence of items by PEP440 SEMVER logic")
+            print(sequence)
+
+            ordered_sequence = list(
+                sorted(
+                    sequence,
+                    key=lambda x: version.Version(x)
+                )
+            )
+        elif method == OrderAlgorithms.TIME:
+            # When sorting by time the latest item in the sequence with the highest or most recent time
+            # will be on index[0] in the returned sequence.
+            print(f"DEBUG: Ordering sequence of items by TIME they was created, input:")
+            print(sequence)
+
+            ordered_sequence = list(
+                sorted(
+                    sequence,
+                    key=lambda t: t[1],
+                )
+            )
+        elif method == OrderAlgorithms.ALPHABETICAL:
+            print(f"DEBUG: Order sequence of items by ALPHABETICAL string order")
+            print(sequence)
+
+            # By default sorted will do alphabetical sort
+            ordered_sequence = list(sorted(sequence))
+        else:
+            raise SgitConfigException(f"Unsupported ordering algorithm selected")
+
+        print(f"DEBUG: Ordered sequence result: {ordered_sequence}")
+
+        return ordered_sequence
+
+    def _select(self, sequence, selection_query, selection_method):
+        """
+        Given a sequence of objects, perform the selection based on the selection_method and the
+        logic that it implements.
+
+        Supports: SEMVER, EXACT
+
+        Defaults to SEMVER logic
+
+        SEMVER: It will run you selection against the sequence of items and with a library supporting
+                PEP440 semver comparison logic. Important note here is that it will take the highest
+                version depending on the previous ordering that still fits the semver version check.
+
+                Given a sequence of 1.1.0, 1.0.0, 0.9.0 and a selection of >= 1.0.0, it will select 1.1.0
+                
+                Given a sequence of 0.9.0, 1.0.0, 1.1.0 and a selection of >= 0.9.0, it will select 0.9.0
+                as that item is first in the sequence that matches the query.
+
+                Two special keywords exists, first and last. First will pick the first item in the sequence
+                and last will pick the last item in the sequence. Combining this with different ordering logics
+                we can get a bit more dynamic selection options.
+
+        EXACT: This matching algorithm is more of a textual exact comparison that do not use any semver of
+               comparison between items in the sequence. In the case you want to point to a specific commit
+               that do not have any general semver information or data in it you should use this method.
+        """
+        if selection_method == SelectionMethods.SEMVER:
+            if selection_query == "last":
+                return sequence[-1]
+            elif selection_query == "first":
+                return sequence[0]
+            else:
+                spec = SpecifierSet(selection_query)
+
+                filtered_versions = list(
+                    spec.filter(
+                        sequence,
+                    )
+                )
+
+                print(f"DEBUG: filtered_versions")
+                print(filtered_versions)
+
+                return filtered_versions[-1]
+        elif selection_method == SelectionMethods.EXACT:
+            for item in sequence:
+                if item == selection_query:
+                    return item
+
+            # Query not found in sequence, return None
+            return None
+        else:
+            raise SgitConfigException(f"Unsupported select algorithm selected")
