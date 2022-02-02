@@ -3,7 +3,6 @@
 # python std lib
 import os
 import pdb
-import re
 import sys
 import traceback
 
@@ -180,7 +179,7 @@ def cli_entrypoint():
         cli_args, sub_args = parse_cli()
         exit_code = run(cli_args, sub_args)
         sys.exit(exit_code)
-    except Exception as e:
+    except Exception:
         ex_type, ex_value, ex_traceback = sys.exc_info()
 
         if "DEBUG" in os.environ:

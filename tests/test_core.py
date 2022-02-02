@@ -5,11 +5,11 @@ import os
 
 # sgit imports
 from sgit.core import Sgit, DEFAULT_REPO_CONTENT
-from sgit.exceptions import SgitException, SgitConfigException
+from sgit.exceptions import SgitConfigException
 
 # 3rd party imports
 import pytest
-from git import Git, Repo
+from git import Repo
 from ruamel import yaml
 
 
@@ -71,8 +71,6 @@ def test_init_repo(sgit):
 
 
 def test_init_repo_file_exists(sgit):
-    """
-    """
     sgit.sgit_config_file_path.write("foobar")
 
     retcode = sgit.init_repo()
@@ -82,12 +80,12 @@ def test_init_repo_file_exists(sgit):
 
 def test_get_config_file(sgit):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     loaded_config = sgit._get_config_file()
     assert loaded_config == {"repos": {}}
 
-    ## If no .sgit config file exists we should get system exit call
+    # If no .sgit config file exists we should get system exit call
     os.remove(sgit.sgit_config_file_path)
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
@@ -99,7 +97,7 @@ def test_get_config_file(sgit):
 
 def test_dump_config_file(sgit):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     mock_config_data = {"foo": "bar"}
     sgit._dump_config_file(mock_config_data)
@@ -112,25 +110,25 @@ def test_dump_config_file(sgit):
 
 def test_repo_list(sgit):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
-    ## Assume that if no repo has been added we should get an error
-    ## The default configfile after init_repo is empty and usable here
+    # Assume that if no repo has been added we should get an error
+    # The default configfile after init_repo is empty and usable here
     retcode = sgit.repo_list()
     assert retcode == 1
 
 
 def test_repo_add(sgit):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
-    ## Test exception failure if we send in the wrong data
+    # Test exception failure if we send in the wrong data
     with pytest.raises(SgitConfigException) as pytest_wrapped_e:
         sgit.repo_add(None, None, None)
 
     assert pytest_wrapped_e.type == SgitConfigException
 
-    ## Do a valid add of a new repo
+    # Do a valid add of a new repo
     name = "foobar"
     gitrepo = "git@github.com/sgit"
     revision = "master"
@@ -142,16 +140,16 @@ def test_repo_add(sgit):
         "repos": {name: {"url": gitrepo, "revision": {"branch": revision}}}
     }
 
-    ## If rerunning the same config then it should cause an error
+    # If rerunning the same config then it should cause an error
     retcode = sgit.repo_add(name, gitrepo, revision)
     assert retcode == 1
 
 
 def test_repo_set(sgit):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
-    ## Add a repo with certain attributes. Update them and test they got saved
+    # Add a repo with certain attributes. Update them and test they got saved
     sgit.repo_add("1a", "1a", "1c")
 
     retcode = sgit.repo_set("1a", "branch", "2d")
@@ -163,7 +161,7 @@ def test_repo_set(sgit):
 
 def test_repo_update(sgit, mocker):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     # Update with no arguments should raise TypeError
     with pytest.raises(TypeError) as pytest_wrapped_e:
@@ -191,7 +189,7 @@ def test_repo_update_all(sgit, mocker, monkeypatch):
             return ret
 
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     # Patch input to yes further on
     mocker.patch("builtins.input", return_value="yes")
@@ -218,7 +216,7 @@ def test_repo_update_all(sgit, mocker, monkeypatch):
 
 def test_repo_update_named(sgit, mocker):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     # Update with 'test' should return 1
     retcode = sgit.update("test")
@@ -229,7 +227,7 @@ def test_repo_update_named(sgit, mocker):
 
 def test_repo_update_list(sgit, mocker):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     # Update with list should return 1
     data = list(user_data().keys())
@@ -242,7 +240,7 @@ def test_repo_update_list(sgit, mocker):
 
 def test_repo_update_dict(sgit, mocker):
     retcode = sgit.init_repo()
-    assert retcode == None
+    assert retcode is None
 
     # TODO: Fix broken code block
     # # Update with dict should raise TypeError

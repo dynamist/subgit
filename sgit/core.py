@@ -16,7 +16,6 @@ import git
 from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
-from packaging.version import Version
 from ruamel import yaml
 from ruamel.yaml import Loader
 
@@ -107,7 +106,12 @@ class Sgit():
             return 1
 
         # TODO: It is bad that each repo will default to a branch type and not a tag type
-        config["repos"][name] = {"url": url, "revision": {"branch": revision}}
+        config["repos"][name] = {
+            "url": url,
+            "revision": {
+                "branch": revision,
+            },
+        }
 
         self._dump_config_file(config)
 
@@ -264,12 +268,10 @@ class Sgit():
         if not repos:
             raise SgitConfigException(f"No valid repositories found")
 
+        # Validation step across all repos to manipulate that they are not dirty
+        # or anything uncommited that would break the code trees.
         #
-        ## Validation step across all repos to manipulate that they are not dirty
-        ## or anything uncommited that would break the code trees.
-        ##
-        ## Abort out if any repo is bad.
-        #
+        # Abort out if any repo is bad.
 
         has_dirty = False
 
@@ -282,7 +284,7 @@ class Sgit():
 
             repo = Repo(repo_path)
 
-            ## A dirty repo means there is uncommited changes in the tree
+            # A dirty repo means there is uncommited changes in the tree
             if repo.is_dirty():
                 print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
                 dirty_files = [item.a_path for item in repo.index.diff(None)]
@@ -296,9 +298,7 @@ class Sgit():
             print(f"\nERROR: Found one or more dirty repos. Resolve it before continue...")
             return 1
 
-        #
-        ## Repos looks good to be updated. Run the update logic for each repo in sequence
-        #
+        # Repos looks good to be updated. Run the update logic for each repo in sequence
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
@@ -404,9 +404,8 @@ class Sgit():
                     print(f"DEBUG: {select_config}")
                     print(f"DEBUG: {select_method}")
 
-                    #
                     # Main tag parsing logic
-                    #
+
                     git_repo_tags = [
                         str(tag)
                         for tag in repo.tags
@@ -513,24 +512,16 @@ class Sgit():
             print(f"DEBUG: Ordering sequence of items by PEP440 SEMVER logic")
             print(sequence)
 
-            ordered_sequence = list(
-                sorted(
-                    sequence,
-                    key=lambda x: version.Version(x)
-                )
-            )
+            # By using packages module and Version class we can properly compare semver
+            # versions with PEP440 compatible version compare
+            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(x)))
         elif method == OrderAlgorithms.TIME:
-            # When sorting by time the latest item in the sequence with the highest or most recent time
-            # will be on index[0] in the returned sequence.
             print(f"DEBUG: Ordering sequence of items by TIME they was created, input:")
             print(sequence)
 
-            ordered_sequence = list(
-                sorted(
-                    sequence,
-                    key=lambda t: t[1],
-                )
-            )
+            # When sorting by time the latest item in the sequence with the highest or most recent time
+            # will be on index[0] in the returned sequence
+            ordered_sequence = list(sorted(sequence, key=lambda t: t[1]))
         elif method == OrderAlgorithms.ALPHABETICAL:
             print(f"DEBUG: Order sequence of items by ALPHABETICAL string order")
             print(sequence)
@@ -558,7 +549,7 @@ class Sgit():
                 version depending on the previous ordering that still fits the semver version check.
 
                 Given a sequence of 1.1.0, 1.0.0, 0.9.0 and a selection of >= 1.0.0, it will select 1.1.0
-                
+
                 Given a sequence of 0.9.0, 1.0.0, 1.1.0 and a selection of >= 0.9.0, it will select 0.9.0
                 as that item is first in the sequence that matches the query.
 

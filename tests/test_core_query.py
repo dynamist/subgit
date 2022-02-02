@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 
 # python std lib
-import os
+import random
 from datetime import datetime, timedelta
 
 # sgit imports
-from sgit.core import Sgit
 from sgit.constants import *
 from sgit.enums import *
 from sgit.exceptions import *
 
 # 3rd party imports
 import pytest
-from git import Git, Repo
-from ruamel import yaml
 from packaging.version import InvalidVersion
 
 
@@ -114,7 +111,7 @@ def test_order_semver(sgit):
 
 def test_order_alphabetical(sgit):
     assert sgit._order(["c", "a", "b"], OrderAlgorithms.ALPHABETICAL) == ["a", "b", "c"]
-    
+
     assert sgit._order(["3", "1", "2"], OrderAlgorithms.ALPHABETICAL) == ["1", "2", "3"]
 
 
@@ -171,7 +168,7 @@ def test_select_exact(sgit):
         ["1.1.0", "1.0.0", "0.9.0"],
         "0.0.0",
         SelectionMethods.EXACT,
-    ) == None
+    ) is None
 
 
 def test_select_failure(sgit):
@@ -196,7 +193,6 @@ def test_chain(sgit):
     and if the tags from this git repo still works as expected you should get out the latest
     git tag from the repo based on semver logic which would be 1.8.0
     """
-    import random
     input_sequence = ["1.0.0", "15.10", "18.10", "v0.9.0", "1.8.0"]
     random.shuffle(input_sequence)
 

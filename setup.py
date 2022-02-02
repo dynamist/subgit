@@ -46,7 +46,7 @@ setup(
         ],
         "validation": [
             "pykwalify",
-        ]
+        ],
     },
     classifiers=[
         # "Development Status :: 1 - Planning",
