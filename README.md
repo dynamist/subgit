@@ -13,13 +13,15 @@ This tool has been primarly constructed to be a part inside a CI/CD solution whe
 
 ### !!WARNING!!
 
-Sgit do not leave any guarantees that it will not modify or throw away any local changes or modifications done to the git repo that it checks out and handles. Sgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
+Sgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Sgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
 
 In addition to `sgit`, you will also get an `git-sub` command, that when used as `git sub [...]` will be invoked properly. A neat way to expose this tool in a way that integrates with your Git workflow.
 
 ### Quickstart
 
-Create a new folder where you want your sub repos to be located
+Install the tool with `pip install py-sgit`. The tool requires python version >= 3.8.0
+
+Create a temporary folder where you want your sub repos to be located
 
 ```bash
 mkdir /tmp/sgit; cd /tmp/sgit
@@ -35,44 +37,35 @@ Inspect the content by looking inside the `.sgit.yml` config file
 
 ```bash
 cat .sgit.yml
-```
 
-Default content of the configuration file for a new initialized repo
+# This will show the default config in an empty config file
 
-```yaml
 repos: { }
 ```
 
-To add any number of git repos that you want to clone
+To add any number of git repos that you want to clone.
+
+You can optionally specify the target branch you want to clone by adding it at after the clone url. It will default to `master` branch as most git repos still use that. If you are using `main` as your default branch you need to specify that explicitly.
 
 ```bash
-sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git
+sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git master
 ```
 
-You can optionally specify the target branch you want to clone by adding it at after the clone url
-
-```bash
-sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
-```
-
-Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision. Running `update` command without any arguments will update all repos defined in the configuration file.
+Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a inidial `git clone` before moving to your selected revision.
 
 ```bash
 sgit update
 ```
 
-Or you can update a specific repo
+Or you can update a specific repo from your config file.
 
 ```bash
-sgit update pykwalify redis
+sgit update pykwalify
 ```
 
-sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
+Sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
-
-## List config file content and repo status
-
-View the content and all tracked git repos
+You can view a summary of your current repo and config state by running
 
 ```bash
 sgit list
@@ -100,59 +93,64 @@ The command `sgit repo set` is used to manipulate existing repos in a config fil
 
 ### Update/set a branch revision
 
-To move a repo to a new branch revision
+To move a repo to a new branch if you want for example to switch from `master` to `develop`.
 
 ```bash
-sgit repo set redis branch unstable
+sgit repo set pykwalify branch develop
 ```
 
 Update the git repo and checkout the branch
 
 ```bash
-sgit update redis
+sgit update pykwalify
 ```
+
+There is much more extensive docuemtnation and examples for this feature in `docs/revision-branch.md`.
+
 
 ### Update/set a tag revision
 
-To checkout a tag in a repo
+To checkout a tag in a repo.
 
 ```bash
-sgit repo set redis tag 1.0.0
+sgit repo set pykwalify tag 1.0.0
 ```
 
 Update the git repo and checkout the tag
 
 ```bash
-sgit update redis
+sgit update pykwalify
 ```
 
+There is much more extensive documentation and examples for this feature in `docs/revision-tag.md`
 
-## Fetch a repo
+
+## Fetch changes in a repo
 
 If you want to `git fetch` all or a subset of git repos in your config then you can use the `sgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
 
 Sgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
 
 ```bash
-# Fetch all repos implicitly
+# Fetch all repos in sequence
 sgit fetch
 
-# Fetch two indiviidual repos
-sgit fetch redis pykwalify
+# Fetch one specific repo
+sgit fetch pykwalify
 ```
 
 
 ## Development
 
-Create a virtualenv (venv) on your system
+Create a virtualenv (venv) on your system.
 
-Install all runtime dependencies, development dependencies and the package in local editable mode
+Install all runtime dependencies, test dependencies, development dependencies and the package in local editable mode with
 
 ```bash
 pip install -e ".[dev,test]"
 ```
 
-To run all unit tests run `pytest` from the root folder
+To run all unit tests run `pytest` from the root folder.
 
 
 ### Extra development option flags
@@ -182,6 +180,6 @@ Python 2.7 is EOL and that version will not be supported at all moving forward.
 | Projects page          | https://github.com/dynamist/sgit/projects/1
 | pypi                   | https://pypi.python.org/pypi/sgit/ |
 | License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
-| Copyright              | `Copyright (c) 2019-2020 Dynamist AB` |
+| Copyright              | `Copyright (c) 2019-2021 Dynamist AB` |
 | git repo               | `git@github.com:dynamist/sgit.git` |
-| install stable         | `pip install sgit` |
+| install stable         | `pip install py-sgit` |

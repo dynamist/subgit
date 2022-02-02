@@ -4,7 +4,7 @@ with open("README.md") as f:
     readme = f.read()
 
 setup(
-    name="sgit",
+    name="py-sgit",
     version="0.1.0",
     description="CLI tool ",
     long_description=readme,
