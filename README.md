@@ -21,49 +21,49 @@ In addition to `sgit`, you will also get an `git-sub` command, that when used as
 
 Create a new folder where you want your sub repos to be located
 
-```
+```bash
 mkdir /tmp/sgit; cd /tmp/sgit
 ```
 
 Initialize an empty `.sgit.yml` config file
 
-```
+```bash
 sgit init
 ```
 
 Inspect the content by looking inside the `.sgit.yml` config file
 
-```
+```bash
 cat .sgit.yml
 ```
 
 Default content of the configuration file for a new initialized repo
 
-```
+```yaml
 repos: { }
 ```
 
 To add any number of git repos that you want to clone
 
-```
+```bash
 sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git
 ```
 
 You can optionally specify the target branch you want to clone by adding it at after the clone url
 
-```
+```bash
 sgit repo add redis git@github.com:Grokzen/redis-py-cluster.git master
 ```
 
 Then proceed to the initial clone/pull of all repos in the config file and move the repo to the specified revision. Running `update` command without any arguments will update all repos defined in the configuration file.
 
-```
+```bash
 sgit update
 ```
 
 Or you can update a specific repo
 
-```
+```bash
 sgit update pykwalify redis
 ```
 
@@ -74,7 +74,7 @@ sgit relies on your own ssh config or other git config is properly setup and con
 
 View the content and all tracked git repos
 
-```
+```bash
 sgit list
 ```
 
@@ -102,13 +102,13 @@ The command `sgit repo set` is used to manipulate existing repos in a config fil
 
 To move a repo to a new branch revision
 
-```
+```bash
 sgit repo set redis branch unstable
 ```
 
 Update the git repo and checkout the branch
 
-```
+```bash
 sgit update redis
 ```
 
@@ -116,13 +116,13 @@ sgit update redis
 
 To checkout a tag in a repo
 
-```
+```bash
 sgit repo set redis tag 1.0.0
 ```
 
 Update the git repo and checkout the tag
 
-```
+```bash
 sgit update redis
 ```
 
@@ -148,8 +148,8 @@ Create a virtualenv (venv) on your system
 
 Install all runtime dependencies, development dependencies and the package in local editable mode
 
-```
-pip install -e ".[dev]"
+```bash
+pip install -e ".[dev,test]"
 ```
 
 To run all unit tests run `pytest` from the root folder
@@ -162,18 +162,26 @@ You can currently use the following envroinment flags `DEBUG=1` to get additiona
 To get into a PDB debugger on any uncaught exceptions you can set the environment flag `PDB=1` and that will take you into a pdb debugger at the cli exit point so you can dig into any issues you might have.
 
 
+## Python support guidelines
+
+We follow the method of always suporting the latest released major version of python and two major versions back. This gives us backwards compatibility for about 2-3 years depending on the release speed of new python versions.
+
+When a new major version is incorporated, tested and validated it works as expected and that dependencies is not broken, the update for new python version support should be released with the next major version of sgit. A major python version should never be dropped in a minor version update.
+
+Python 2.7 is EOL and that version will not be supported at all moving forward.
+
 
 ## Project details
 
 |   |   |
 |---|---|
-| python support         | 3.6, 3.7, 3.8 |
-| Source                 | https://github.com/dynamist/sgit |
+| python support         | 3.8, 3.9, 3.10 |
+| Source code            | https://github.com/dynamist/sgit |
 | Changelog              | https://github.com/dynamist/sgit/blob/master/CHANGELOG.md |
 | Issues                 | https://github.com/dynamist/sgit/issues |
+| Projects page          | https://github.com/dynamist/sgit/projects/1
 | pypi                   | https://pypi.python.org/pypi/sgit/ |
 | License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
 | Copyright              | `Copyright (c) 2019-2020 Dynamist AB` |
 | git repo               | `git@github.com:dynamist/sgit.git` |
 | install stable         | `pip install sgit` |
-| required dependencies  | `docopt>=0.6.2`<br> `ruamel.yaml>=0.16.0`<br> `gitpython>=3.0.5` |
