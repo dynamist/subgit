@@ -34,6 +34,10 @@ setup(
             "pytest",
             "pytest-mock",
             "mock",
+            "tox",
+            "black",
+            "isort",
+            "flake8",
         ],
         "dev": [
             "pylint",

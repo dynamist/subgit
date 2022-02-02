@@ -150,7 +150,16 @@ Install all runtime dependencies, test dependencies, development dependencies an
 pip install -e ".[dev,test]"
 ```
 
-To run all unit tests run `pytest` from the root folder.
+
+### Run unitest suite & Tox
+
+To run all unit tests run `pytest` from the root folder. It will use your default python environment you are in right now.
+
+We use tox to run multi python python tests to validate our test suite works our supported python version range.
+
+Tox is installed in the pip extras block `.[test]`. To run all tests/linters against all versions simply run `tox` from your cli. To run a specific python version run `tox -e py310`. Most linux distros do not have all python versions installed by default.
+
+This guide https://linuxize.com/post/how-to-install-python-3-8-on-ubuntu-18-04/ can help you to install older python versions either from dead-snakes repos or from source code.
 
 
 ### Extra development option flags
