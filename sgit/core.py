@@ -369,7 +369,7 @@ class Sgit():
                         order_config = None
                         select_config = tag_config
                         select_method = SelectionMethods.SEMVER
-                    else:
+                    elif isinstance(tag_config, dict):
                         # If "filter" key is not specified then we should not filter anything and keep all values
                         filter_config = tag_config.get("filter", [])
 
@@ -405,6 +405,8 @@ class Sgit():
                                 raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
                         else:
                             select_method = SelectionMethods.SEMVER
+                    else:
+                        raise SgitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
 
                     print(f"DEBUG: {filter_config}")
                     print(f"DEBUG: {order_config}")
