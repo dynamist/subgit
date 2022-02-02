@@ -362,41 +362,49 @@ class Sgit():
                     #
                     tag_config = revision["tag"]
 
-                    # If "filter" key is not specified then we should not filter anything and keep all values
-                    filter_config = tag_config.get("filter", [])
-
-                    # If we do not have a list, convert it internally first
-                    if isinstance(filter_config, str):
-                        filter_config = [filter_config]
-
-                    if not isinstance(filter_config, list):
-                        raise SgitConfigException(f"filter option must be a list of items or a single string")
-
-                    order_config = tag_config.get("order", None)
-                    if order_config is None:
+                    if isinstance(tag_config, str):
+                        # All options should be set to default'
+                        filter_config = []
                         order_algorithm = OrderAlgorithms.SEMVER
-                    else:
-                        order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
-
-                        if order_algorithm is None:
-                            raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
-
-                    select_config = tag_config.get("select", None)
-                    select_method = None
-                    if select_config is None:
-                        raise SgitConfigException(f"select key is required in all tag revisions")
-
-                    # We have sub options to extract out
-                    if isinstance(select_config, dict):
-                        select_config = select_config["value"]
-                        select_method_value = select_config["method"]
-
-                        select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
-
-                        if select_method is None:
-                            raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
-                    else:
+                        order_config = None
+                        select_config = tag_config
                         select_method = SelectionMethods.SEMVER
+                    else:
+                        # If "filter" key is not specified then we should not filter anything and keep all values
+                        filter_config = tag_config.get("filter", [])
+
+                        # If we do not have a list, convert it internally first
+                        if isinstance(filter_config, str):
+                            filter_config = [filter_config]
+
+                        if not isinstance(filter_config, list):
+                            raise SgitConfigException(f"filter option must be a list of items or a single string")
+
+                        order_config = tag_config.get("order", None)
+                        if order_config is None:
+                            order_algorithm = OrderAlgorithms.SEMVER
+                        else:
+                            order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
+
+                            if order_algorithm is None:
+                                raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
+
+                        select_config = tag_config.get("select", None)
+                        select_method = None
+                        if select_config is None:
+                            raise SgitConfigException(f"select key is required in all tag revisions")
+
+                        # We have sub options to extract out
+                        if isinstance(select_config, dict):
+                            select_config = select_config["value"]
+                            select_method_value = select_config["method"]
+
+                            select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
+
+                            if select_method is None:
+                                raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
+                        else:
+                            select_method = SelectionMethods.SEMVER
 
                     print(f"DEBUG: {filter_config}")
                     print(f"DEBUG: {order_config}")
