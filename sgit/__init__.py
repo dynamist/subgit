@@ -21,23 +21,28 @@ log_level_to_string_map = {
     0: "INFO",
 }
 
+DEFAULT_LOG_LEVEL_TO_MSG_MAPPING_VALUE = "%(message)s"
+
+log_level_to_msg_mapping = {
+    5: "%(levelname)s - %(name)s:%(lineno)s - %(message)s",
+}
+
 
 def init_logging(log_level):
     """
     Init logging settings with default set to INFO
     """
-    log_level = log_level_to_string_map[min(log_level, 5)]
+    log_level_str = log_level_to_string_map[min(log_level, 5)]
 
-    msg = (
-        "%(levelname)s - %(name)s:%(lineno)s - %(message)s"
-        if log_level in os.environ
-        else "%(levelname)s - %(message)s"
+    msg = log_level_to_msg_mapping.get(
+        min(log_level, 5),
+        DEFAULT_LOG_LEVEL_TO_MSG_MAPPING_VALUE,
     )
 
     logging_conf = {
         "version": 1,
         "root": {
-            "level": log_level,
+            "level": log_level_str,
             "handlers": [
                 "console",
             ],
@@ -45,14 +50,14 @@ def init_logging(log_level):
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": log_level,
+                "level": log_level_str,
                 "formatter": "simple",
                 "stream": "ext://sys.stdout",
             },
         },
         "formatters": {
             "simple": {
-                "format": " {0}".format(msg)
+                "format": f"{msg}",
             },
         },
     }

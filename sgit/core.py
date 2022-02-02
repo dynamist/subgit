@@ -17,10 +17,8 @@ from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
-from ruamel.yaml import Loader
 
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
@@ -32,7 +30,8 @@ class Sgit():
             self.sgit_config_file_name = ".sgit.yml"
 
             self.sgit_config_file_path = os.path.join(
-                os.getcwd(), self.sgit_config_file_name
+                os.getcwd(),
+                self.sgit_config_file_name,
             )
         else:
             self.sgit_config_file_name = os.path.basename(config_file_path)
@@ -48,20 +47,20 @@ class Sgit():
                     - Write new initial empty file to disk
         """
         if os.path.exists(self.sgit_config_file_path):
-            print(f"File '{self.sgit_config_file_name}' already exists on disk")
+            log.error(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
 
         with open(self.sgit_config_file_path, "w") as stream:
             stream.write(DEFAULT_REPO_CONTENT)
-            print(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
+            log.info(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
 
     def _get_config_file(self):
         if not os.path.exists(self.sgit_config_file_path):
-            print("No .sgit.yml file exists in current CWD")
+            log.error("No .sgit.yml file exists in current CWD")
             sys.exit(1)
 
         with open(self.sgit_config_file_path, "r") as stream:
-            return yaml.load(stream, Loader=Loader)
+            return yaml.load(stream, Loader=yaml.Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
 
@@ -102,7 +101,7 @@ class Sgit():
         config = self._get_config_file()
 
         if name in config.get("repos", []):
-            print(f'Repo with name "{name}" already exists in config file')
+            log.error(f'Repo with name "{name}" already exists in config file')
             return 1
 
         # TODO: It is bad that each repo will default to a branch type and not a tag type
@@ -115,7 +114,7 @@ class Sgit():
 
         self._dump_config_file(config)
 
-        print(f'Successfully added new repo "{name}"')
+        log.info(f'Successfully added new repo "{name}"')
 
     def repo_set(self, name, attrib, value):
         if not attrib or not value:
@@ -124,19 +123,19 @@ class Sgit():
         config = self._get_config_file()
 
         if name not in config.get("repos", []):
-            print(f'Repo with name "{name}" not found in config file')
+            log.error(f'Repo with name "{name}" not found in config file')
             return 1
 
         if attrib == "tag":
             del config["repos"][name]["revision"]["tag"]
             config["repos"][name]["revision"]["tag"] = value
-            print(f'Set tag for repo "{name}" to -> "{value}"')
+            log.info(f'Set tag for repo "{name}" to -> "{value}"')
         elif attrib == "branch":
             del config["repos"][name]["revision"]["branch"]
             config["repos"][name]["revision"]["branch"] = value
-            print(f'Set branch for repo "{name}" to -> "{value}"')
+            log.info(f'Set branch for repo "{name}" to -> "{value}"')
         else:
-            print(f"Unsupported set attribute operation")
+            log.error(f"Unsupported set attribute operation")
             return 1
 
         self._dump_config_file(config)
@@ -145,7 +144,7 @@ class Sgit():
         print(question)
 
         if self.answer_yes:
-            print(f"INFO: Automatically answer yes to question")
+            log.info(f"--yes flag set, automatically answer yes to question")
             return True
 
         answer = input("(y/n) << ")
@@ -161,7 +160,7 @@ class Sgit():
         To update a subset of repo names, send in them as a list of strings.
         A empty list of items will update no repos.
         """
-        print(f"DEBUG: Repo fetch input - {repos}")
+        log.debug(f"repo fetch input - {repos}")
 
         config = self._get_config_file()
 
@@ -176,12 +175,12 @@ class Sgit():
                 if repo_name in config["repos"]:
                     repos_to_fetch.append(repo_name)
                 else:
-                    print(f"WARNING: repo '{repo_name}' not found in configuration")
+                    log.warning(f"repo '{repo_name}' not found in configuration")
 
-        print(f"INFO: repos to fetch: {repos_to_fetch}")
+        log.info(f"repos to fetch: {repos_to_fetch}")
 
         if len(repos_to_fetch) == 0:
-            print(f"No repos to fetch found")
+            log.error(f"No repos to fetch found")
             return 1
 
         for repo_name in repos_to_fetch:
@@ -189,17 +188,17 @@ class Sgit():
                 repo_path = os.path.join(os.getcwd(), repo_name)
                 git_repo = Repo(repo_path)
 
-                print(f"Fetching git repo '{repo_name}'")
+                log.info(f"Fetching git repo '{repo_name}'")
                 fetch_results = git_repo.remotes.origin.fetch()
-                print(f"Fetching completed for repo '{repo_name}'")
+                log.info(f"Fetching completed for repo '{repo_name}'")
 
                 for fetch_result in fetch_results:
-                    print(f" - Fetch result: {fetch_result.name}")
+                    log.info(f" - Fetch result: {fetch_result.name}")
             except git.exc.NoSuchPathError:
-                print(f"Repo {repo_name} not found on disk. You must update to clone it before fetching")
+                log.error(f"Repo {repo_name} not found on disk. You must update to clone it before fetching")
                 return 1
 
-        print(f"Fetching for all repos completed")
+        log.info(f"Fetching for all repos completed")
         return 0
 
     def _get_active_repos(self, config):
@@ -230,7 +229,7 @@ class Sgit():
                 - If working tree is empty
                     - Reset the repo to the specified rev
         """
-        print(f"DEBUG: Repo update - {names}")
+        log.debug(f"Repo update - {names}")
 
         config = self._get_config_file()
 
@@ -239,7 +238,7 @@ class Sgit():
         repos = []
 
         if len(active_repos) == 0:
-            print(f"ERROR: There is no repos defined or enabled in the config")
+            log.error(f"There is no repos defined or enabled in the config")
             return 1
 
         if names is None:
@@ -249,20 +248,20 @@ class Sgit():
             answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
 
             if not answer:
-                print(f"User aborted update step")
+                log.warning(f"User aborted update step")
                 return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
             for name in names:
                 if name not in active_repos:
                     choices = ", ".join(active_repos)
-                    print(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
+                    log.error(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
             repos = names
         else:
-            print(f"DEBUG: names {names}")
+            log.debug(f"Names {names}")
             raise SgitConfigException(f"Unsuported value type for argument names")
 
         if not repos:
@@ -286,16 +285,16 @@ class Sgit():
 
             # A dirty repo means there is uncommited changes in the tree
             if repo.is_dirty():
-                print(f'ERROR: The repo "{name}" is dirty and has uncommited changes in the following files')
+                log.error(f'The repo "{name}" is dirty and has uncommited changes in the following files')
                 dirty_files = [item.a_path for item in repo.index.diff(None)]
 
                 for file in dirty_files:
-                    print(f" - {file}")
+                    log.info(f" - {file}")
 
                 has_dirty = True
 
         if has_dirty:
-            print(f"\nERROR: Found one or more dirty repos. Resolve it before continue...")
+            log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
         # Repos looks good to be updated. Run the update logic for each repo in sequence
@@ -313,7 +312,7 @@ class Sgit():
                         repo_path,
                         branch=clone_rev,
                     )
-                    print(f'Successfully cloned repo "{name}" from remote server')
+                    log.info(f'Successfully cloned repo "{name}" from remote server')
                 except git.exc.GitCommandError as e:
                     # We assume that retcode 128 means you try to clone into a bare repo and we must
                     # attempt to clone it w/o a specific branch identifier.
@@ -323,13 +322,13 @@ class Sgit():
                                 config["repos"][name]["url"],
                                 repo_path,
                             )
-                            print(f'Successfully cloned into bare git repo "{name}" from remote server')
+                            log.info(f'Successfully cloned into bare git repo "{name}" from remote server')
                         except Exception as e:
                             raise SgitException(f'Clone into bare git repo "{name}" failed, exception: {e}')
                 except Exception as e:
                     raise SgitException(f'Clone "{name}" failed, exception: {e}')
             else:
-                print(f"TODO: Parse for any changes...")
+                log.debug(f"TODO: Parse for any changes...")
                 # TODO: Check that origin remote exists
 
                 repo = Repo(os.path.join(os.getcwd(), name))
@@ -341,7 +340,7 @@ class Sgit():
 
                 # How to handle the repo when a branch is specified
                 if "branch" in revision:
-                    print(f"DEBUG: Handling branch update case")
+                    log.debug(f"Handling branch update case")
 
                     # Extract the sub tag data
                     branch_revision = revision["branch"]
@@ -353,8 +352,8 @@ class Sgit():
                     # TODO: This only support branches for now
                     repo.heads[branch_revision].checkout()
 
-                    print(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
-                    print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
+                    log.info(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
+                    log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
                 elif "tag" in revision:
                     #
                     # Parse and extract out all relevant config options and determine if they are nested
@@ -408,11 +407,11 @@ class Sgit():
                     else:
                         raise SgitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
 
-                    print(f"DEBUG: {filter_config}")
-                    print(f"DEBUG: {order_config}")
-                    print(f"DEBUG: {order_algorithm}")
-                    print(f"DEBUG: {select_config}")
-                    print(f"DEBUG: {select_method}")
+                    log.debug(f"{filter_config}")
+                    log.debug(f"{order_config}")
+                    log.debug(f"{order_algorithm}")
+                    log.debug(f"{select_config}")
+                    log.debug(f"{select_method}")
 
                     # Main tag parsing logic
 
@@ -420,7 +419,7 @@ class Sgit():
                         str(tag)
                         for tag in repo.tags
                     ]
-                    print(f"DEBUG: Raw git tags from git repo {git_repo_tags}")
+                    log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
                     filter_output = self._filter(git_repo_tags, filter_config)
 
@@ -431,21 +430,21 @@ class Sgit():
 
                     order_output = self._order(filter_output, order_algorithm)
                     select_output = self._select(order_output, select_config, select_method)
-                    print(select_output)
+                    log.debug(select_output)
 
                     if not select_output:
                         raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
 
-                    print(f"INFO: Attempting to checkout tag '{select_output}' for repo '{name}'")
+                    log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
 
                     # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
                     # inside the git repo, we will get sub exceptions raised by git module.
                     g.checkout(select_output)
 
-                    print(f"INFO: Checked out tag '{select_output}' for repo '{name}'")
-                    print(f"INFO: Current git hash on HEAD: {str(repo.head.commit)}")
-                    print(f"INFO: Current commit summary on HEAD: ")
-                    print(f"INFO:     {str(repo.head.commit.summary)}")
+                    log.info(f"Checked out tag '{select_output}' for repo '{name}'")
+                    log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
+                    log.info(f"Current commit summary on HEAD in git repo '{name}': ")
+                    log.info(f"  {str(repo.head.commit.summary)}")
 
     def _filter(self, sequence, regex_list):
         """
@@ -462,7 +461,7 @@ class Sgit():
         """
         filtered_sequence = []
 
-        print(f"DEBUG: Running clean step on data")
+        log.debug(f"Running clean step on data")
 
         if not isinstance(regex_list, list):
             raise SgitConfigException(f"sequence for clean step must be a list of items")
@@ -483,12 +482,12 @@ class Sgit():
                 if filter_regex.strip() == "":
                     raise SgitConfigException(f"ERROR: Empty regex filter string is not allowed")
 
-                print(f"DEBUG: Filtering item '{item}' against regex '{filter_regex}")
+                log.debug(f"Filtering item '{item}' against regex '{filter_regex}")
 
                 match_result = re.match(filter_regex, item)
 
                 if match_result:
-                    print(f"DEBUG: Filter match result hit: {match_result}")
+                    log.debug(f"Filter match result hit: {match_result}")
 
                     # If the regex contains a group that is what we want to extract out and
                     # add to our filtered output list of results
@@ -499,7 +498,7 @@ class Sgit():
 
                     break
 
-        print(f"DEBUG: Filter items result: {filtered_sequence}")
+        log.debug(f"Filter items result: {filtered_sequence}")
 
         return filtered_sequence
 
@@ -519,29 +518,29 @@ class Sgit():
         ordered_sequence = []
 
         if method == OrderAlgorithms.SEMVER:
-            print(f"DEBUG: Ordering sequence of items by PEP440 SEMVER logic")
-            print(sequence)
+            log.debug(f"Ordering sequence of items by PEP440 SEMVER logic")
+            log.debug(sequence)
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
             ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(x)))
         elif method == OrderAlgorithms.TIME:
-            print(f"DEBUG: Ordering sequence of items by TIME they was created, input:")
-            print(sequence)
+            log.debug(f"Ordering sequence of items by TIME they was created, input:")
+            log.debug(sequence)
 
             # When sorting by time the latest item in the sequence with the highest or most recent time
             # will be on index[0] in the returned sequence
             ordered_sequence = list(sorted(sequence, key=lambda t: t[1]))
         elif method == OrderAlgorithms.ALPHABETICAL:
-            print(f"DEBUG: Order sequence of items by ALPHABETICAL string order")
-            print(sequence)
+            log.debug(f"Order sequence of items by ALPHABETICAL string order")
+            log.debug(sequence)
 
             # By default sorted will do alphabetical sort
             ordered_sequence = list(sorted(sequence))
         else:
             raise SgitConfigException(f"Unsupported ordering algorithm selected")
 
-        print(f"DEBUG: Ordered sequence result: {ordered_sequence}")
+        log.debug(f"Ordered sequence result: {ordered_sequence}")
 
         return ordered_sequence
 
@@ -585,8 +584,8 @@ class Sgit():
                     )
                 )
 
-                print(f"DEBUG: filtered_versions")
-                print(filtered_versions)
+                log.debug(f"filtered_versions")
+                log.debug(filtered_versions)
 
                 return filtered_versions[-1]
         elif selection_method == SelectionMethods.EXACT:

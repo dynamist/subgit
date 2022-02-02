@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 # python std lib
+import logging
 import os
 import pdb
 import sys
 import traceback
 
 # 3rd party imports
-from docopt import docopt
+from docopt import docopt, extras, Option, DocoptExit
 
 
 base_args = """
@@ -85,14 +86,24 @@ def parse_cli():
     """Parse the CLI arguments and options."""
     import sgit
 
-    from docopt import extras, Option, DocoptExit
-
     try:
         cli_args = docopt(
-            base_args, options_first=True, version=sgit.__version__, help=True
+            base_args,
+            options_first=True,
+            version=sgit.__version__,
+            help=True,
         )
     except DocoptExit:
-        extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
+        extras(
+            True,
+            sgit.__version__,
+            [Option("-h", "--help", 0, True)],
+            base_args,
+        )
+
+    # Set INFO by default, else DEBUG log level
+    sgit.init_logging(5 if "DEBUG" in os.environ else 4)
+    log = logging.getLogger(__name__)
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
@@ -107,7 +118,12 @@ def parse_cli():
     elif cli_args["<command>"] == "fetch":
         sub_args = docopt(sub_fetch_args, argv=argv)
     else:
-        extras(True, sgit.__version__, [Option("-h", "--help", 0, True)], base_args)
+        extras(
+            True,
+            sgit.__version__,
+            [Option("-h", "--help", 0, True)],
+            base_args,
+        )
         sys.exit(1)
 
     # In some cases there is no additional sub args of things to extract
@@ -118,12 +134,15 @@ def parse_cli():
 
 
 def run(cli_args, sub_args):
-    """Execute the CLI."""
+    """
+    Execute the CLI
+    """
+    log = logging.getLogger(__name__)
+
     retcode = 0
 
-    if "DEBUG" in os.environ:
-        print(cli_args)
-        print(sub_args)
+    log.debug(cli_args)
+    log.debug(sub_args)
 
     from sgit.core import Sgit
 
