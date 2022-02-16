@@ -118,47 +118,6 @@ def test_repo_list(sgit):
     assert retcode == 1
 
 
-def test_repo_add(sgit):
-    retcode = sgit.init_repo()
-    assert retcode is None
-
-    # Test exception failure if we send in the wrong data
-    with pytest.raises(SgitConfigException) as pytest_wrapped_e:
-        sgit.repo_add(None, None, None)
-
-    assert pytest_wrapped_e.type == SgitConfigException
-
-    # Do a valid add of a new repo
-    name = "foobar"
-    gitrepo = "git@github.com/sgit"
-    revision = "master"
-
-    sgit.repo_add(name, gitrepo, revision)
-
-    saved_data = sgit._get_config_file()
-    assert saved_data == {
-        "repos": {name: {"url": gitrepo, "revision": {"branch": revision}}}
-    }
-
-    # If rerunning the same config then it should cause an error
-    retcode = sgit.repo_add(name, gitrepo, revision)
-    assert retcode == 1
-
-
-def test_repo_set(sgit):
-    retcode = sgit.init_repo()
-    assert retcode is None
-
-    # Add a repo with certain attributes. Update them and test they got saved
-    sgit.repo_add("1a", "1a", "1c")
-
-    retcode = sgit.repo_set("1a", "branch", "2d")
-    assert retcode is None
-
-    config = sgit._get_config_file()
-    assert config["repos"]["1a"]["revision"]["branch"] == "2d"
-
-
 def test_repo_update(sgit, mocker):
     retcode = sgit.init_repo()
     assert retcode is None

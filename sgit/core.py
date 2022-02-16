@@ -94,52 +94,6 @@ class Sgit():
             else:
                 raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
 
-    def repo_add(self, name, url, revision):
-        if not name or not url or not revision:
-            raise SgitConfigException(f'Name "{name}, url "{url}" or revision "{revision}" must be set')
-
-        config = self._get_config_file()
-
-        if name in config.get("repos", []):
-            log.error(f'Repo with name "{name}" already exists in config file')
-            return 1
-
-        # TODO: It is bad that each repo will default to a branch type and not a tag type
-        config["repos"][name] = {
-            "url": url,
-            "revision": {
-                "branch": revision,
-            },
-        }
-
-        self._dump_config_file(config)
-
-        log.info(f'Successfully added new repo "{name}"')
-
-    def repo_set(self, name, attrib, value):
-        if not attrib or not value:
-            raise SgitConfigException(f'Attrib "{attrib}" or "{value}" must be set')
-
-        config = self._get_config_file()
-
-        if name not in config.get("repos", []):
-            log.error(f'Repo with name "{name}" not found in config file')
-            return 1
-
-        if attrib == "tag":
-            del config["repos"][name]["revision"]["tag"]
-            config["repos"][name]["revision"]["tag"] = value
-            log.info(f'Set tag for repo "{name}" to -> "{value}"')
-        elif attrib == "branch":
-            del config["repos"][name]["revision"]["branch"]
-            config["repos"][name]["revision"]["branch"] = value
-            log.info(f'Set branch for repo "{name}" to -> "{value}"')
-        else:
-            log.error(f"Unsupported set attribute operation")
-            return 1
-
-        self._dump_config_file(config)
-
     def yes_no(self, question):
         print(question)
 

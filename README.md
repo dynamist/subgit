@@ -45,12 +45,6 @@ repos: { }
 
 To add any number of git repos that you want to clone.
 
-You can optionally specify the target branch you want to clone by adding it at after the clone url. It will default to `master` branch as most git repos still use that. If you are using `main` as your default branch you need to specify that explicitly.
-
-```bash
-sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git master
-```
-
 Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a inidial `git clone` before moving to your selected revision.
 
 ```bash
@@ -84,45 +78,6 @@ Output
     URL: git@github.com:grokzen/redis-py-cluster.git
     Branch: master
 ```
-
-
-## Update a repos revision
-
-The command `sgit repo set` is used to manipulate existing repos in a config file.
-
-
-### Update/set a branch revision
-
-To move a repo to a new branch if you want for example to switch from `master` to `develop`.
-
-```bash
-sgit repo set pykwalify branch develop
-```
-
-Update the git repo and checkout the branch
-
-```bash
-sgit update pykwalify
-```
-
-There is much more extensive docuemtnation and examples for this feature in `docs/revision-branch.md`.
-
-
-### Update/set a tag revision
-
-To checkout a tag in a repo.
-
-```bash
-sgit repo set pykwalify tag 1.0.0
-```
-
-Update the git repo and checkout the tag
-
-```bash
-sgit update pykwalify
-```
-
-There is much more extensive documentation and examples for this feature in `docs/revision-tag.md`
 
 
 ## Fetch changes in a repo

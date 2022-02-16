@@ -18,26 +18,12 @@ Usage:
 Commands:
     init          Initialize a new sgit repo
     list          Show the config for all repos in the config file
-    repo          Commands to manipulate .sgit.yml
     update        Update a sub repo
     fetch         Runs git fetch on all repos
 
 Options:
     --help          Show this help message and exit
     --version       Display the version number and exit
-"""
-
-
-sub_repo_args = """
-Usage:
-    sgit repo add <name> <url> [<rev>] [options]
-    sgit repo set <name> branch <branch> [options]
-    sgit repo set <name> tag <tag> [options]
-
-Options:
-    <rev>               Revision to set for a given repo [default: master]
-    -y, --yes           Answers yes to all questions (use with caution)
-    -h, --help          Show this help message and exit
 """
 
 
@@ -107,9 +93,7 @@ def parse_cli():
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
-    if cli_args["<command>"] == "repo":
-        sub_args = docopt(sub_repo_args, argv=argv)
-    elif cli_args["<command>"] == "update":
+    if cli_args["<command>"] == "update":
         sub_args = docopt(sub_update_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
