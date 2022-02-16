@@ -16,10 +16,10 @@ Usage:
     sgit <command> [options] [<args> ...]
 
 Commands:
-    init     Initialize a new sgit repo
-    status   Show status of each configured repo
-    pull     Update a sub repo
     fetch    Runs git fetch on all repos
+    init     Initialize a new sgit repo
+    pull     Update a sub repo
+    status   Show status of each configured repo
 
 Options:
     --help          Show this help message and exit
@@ -27,20 +27,9 @@ Options:
 """
 
 
-sub_pull_args = """
+sub_fetch_args = """
 Usage:
-    sgit pull [<repo> ...] [options]
-
-Options:
-    <repo>       Name of repo to pull
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
-"""
-
-
-sub_status_args = """
-Usage:
-    sgit status [options]
+    sgit fetch [<repo> ...] [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -58,9 +47,20 @@ Options:
 """
 
 
-sub_fetch_args = """
+sub_pull_args = """
 Usage:
-    sgit fetch [<repo> ...] [options]
+    sgit pull [<repo> ...] [options]
+
+Options:
+    <repo>       Name of repo to pull
+    -y, --yes    Answers yes to all questions (use with caution)
+    -h, --help   Show this help message and exit
+"""
+
+
+sub_status_args = """
+Usage:
+    sgit status [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -93,14 +93,14 @@ def parse_cli():
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
-    if cli_args["<command>"] == "pull":
-        sub_args = docopt(sub_pull_args, argv=argv)
+    if cli_args["<command>"] == "fetch":
+        sub_args = docopt(sub_fetch_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
+    elif cli_args["<command>"] == "pull":
+        sub_args = docopt(sub_pull_args, argv=argv)
     elif cli_args["<command>"] == "status":
         sub_args = docopt(sub_status_args, argv=argv)
-    elif cli_args["<command>"] == "fetch":
-        sub_args = docopt(sub_fetch_args, argv=argv)
     else:
         extras(
             True,
@@ -132,14 +132,11 @@ def run(cli_args, sub_args):
 
     core = Sgit(answer_yes=sub_args["--yes"])
 
-    if cli_args["<command>"] == "status":
-        retcode = core.repo_status()
-
-    if cli_args["<command>"] == "pull":
+    if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.pull(repos)
+        retcode = core.fetch(repos)
 
     if cli_args["<command>"] == "init":
         repo_name = sub_args["<name>"]
@@ -147,11 +144,14 @@ def run(cli_args, sub_args):
 
         retcode = core.init_repo(repo_name, repo_url)
 
-    if cli_args["<command>"] == "fetch":
+    if cli_args["<command>"] == "pull":
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.fetch(repos)
+        retcode = core.pull(repos)
+
+    if cli_args["<command>"] == "status":
+        retcode = core.repo_status()
 
     return retcode
 
