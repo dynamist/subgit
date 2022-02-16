@@ -118,22 +118,22 @@ def test_repo_list(sgit):
     assert retcode == 1
 
 
-def test_repo_update(sgit, mocker):
+def test_repo_pull(sgit, mocker):
     retcode = sgit.init_repo()
     assert retcode is None
 
     # Update with no arguments should raise TypeError
     with pytest.raises(TypeError) as pytest_wrapped_e:
-        sgit.update()
+        sgit.pull()
     assert pytest_wrapped_e.type == TypeError
 
     # Update with no answer should return 1
     mocker.patch("builtins.input", return_value="no")
-    retcode = sgit.update("all")
+    retcode = sgit.pull("all")
     assert retcode == 1
 
 
-def test_repo_update_all(sgit, mocker, monkeypatch):
+def test_repo_pull_all(sgit, mocker, monkeypatch):
     def mock_clone(*args, **kwargs):
         switcher = {
             "working": True,
@@ -154,7 +154,7 @@ def test_repo_update_all(sgit, mocker, monkeypatch):
     mocker.patch("builtins.input", return_value="yes")
 
     # If no config is present or a repo is enabled it should return code 1
-    retcode = sgit.update("all")
+    retcode = sgit.pull("all")
     assert retcode == 1
 
     mocker.patch("builtins.input", return_value="yes")
@@ -165,39 +165,39 @@ def test_repo_update_all(sgit, mocker, monkeypatch):
     sgit.sgit_config_file_path.write(data)
 
     with pytest.raises(SgitConfigException) as pytest_wrapped_e:
-        sgit.update("all")
+        sgit.pull("all")
     assert pytest_wrapped_e.type == SgitConfigException
     del data
 
     # Update 'all' should return xx with correct input
-    # TODO: more update all tests
+    # TODO: more pull all tests
 
 
-def test_repo_update_named(sgit, mocker):
+def test_repo_pull_named(sgit, mocker):
     retcode = sgit.init_repo()
     assert retcode is None
 
     # Update with 'test' should return 1
-    retcode = sgit.update("test")
+    retcode = sgit.pull("test")
     assert retcode == 1
 
-    # TODO: more named update tests
+    # TODO: more named pull tests
 
 
-def test_repo_update_list(sgit, mocker):
+def test_repo_pull_list(sgit, mocker):
     retcode = sgit.init_repo()
     assert retcode is None
 
     # Update with list should return 1
     data = list(user_data().keys())
-    retcode = sgit.update(data)
+    retcode = sgit.pull(data)
     assert retcode == 1
     del data
 
-    # TODO: more update list() tests
+    # TODO: more pull list() tests
 
 
-def test_repo_update_dict(sgit, mocker):
+def test_repo_pull_dict(sgit, mocker):
     retcode = sgit.init_repo()
     assert retcode is None
 
@@ -205,8 +205,8 @@ def test_repo_update_dict(sgit, mocker):
     # # Update with dict should raise TypeError
     # data = user_data().keys()
     # with pytest.raises(TypeError) as pytest_wrapped_e:
-    #     sgit.update(data)
+    #     sgit.pull(data)
     # assert pytest_wrapped_e.type == TypeError
     # del data
 
-    # TODO: more update dict() tests
+    # TODO: more pull dict() tests

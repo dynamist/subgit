@@ -119,10 +119,11 @@ class Sgit():
         """
         Runs "git fetch" on one or more git repos.
 
-        To update all enabled repos send in None as value.
+        To fetch all enabled repos send in None as value.
 
-        To update a subset of repo names, send in them as a list of strings.
-        A empty list of items will update no repos.
+        To fetch a subset of repo names, send in them as a list of strings.
+        
+        A empty list of items will not fetch any repo.
         """
         log.debug(f"repo fetch input - {repos}")
 
@@ -159,7 +160,7 @@ class Sgit():
                 for fetch_result in fetch_results:
                     log.info(f" - Fetch result: {fetch_result.name}")
             except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must update to clone it before fetching")
+                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching")
                 return 1
 
         log.info(f"Fetching for all repos completed")
@@ -177,11 +178,11 @@ class Sgit():
 
         return active_repos
 
-    def update(self, names):
+    def pull(self, names):
         """
-        To update all repos defined in the configuration send in names=None
+        To pull all repos defined in the configuration send in names=None
 
-        To update a subset of repos send in a list of strings names=["repo1", "repo2"]
+        To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
 
         Algorithm:
             - If the folder do not exists
@@ -193,7 +194,7 @@ class Sgit():
                 - If working tree is empty
                     - Reset the repo to the specified rev
         """
-        log.debug(f"Repo update - {names}")
+        log.debug(f"Repo pull - {names}")
 
         config = self._get_config_file()
 
@@ -209,10 +210,10 @@ class Sgit():
             repos = config.get("repos", [])
             repo_choices = ", ".join(active_repos)
 
-            answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
+            answer = self.yes_no(f"Are you sure you want to 'git pull' the following repos '{repo_choices}'")
 
             if not answer:
-                log.warning(f"User aborted update step")
+                log.warning(f"User aborted pull step")
                 return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
@@ -261,7 +262,7 @@ class Sgit():
             log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
-        # Repos looks good to be updated. Run the update logic for each repo in sequence
+        # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
@@ -304,7 +305,7 @@ class Sgit():
 
                 # How to handle the repo when a branch is specified
                 if "branch" in revision:
-                    log.debug(f"Handling branch update case")
+                    log.debug(f"Handling branch pull case")
 
                     # Extract the sub tag data
                     branch_revision = revision["branch"]
@@ -316,7 +317,7 @@ class Sgit():
                     # TODO: This only support branches for now
                     repo.heads[branch_revision].checkout()
 
-                    log.info(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
+                    log.info(f'Successfully pull repo "{name}" to latest commit on branch "{branch_revision}"')
                     log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
                 elif "tag" in revision:
                     #

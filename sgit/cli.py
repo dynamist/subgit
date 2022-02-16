@@ -18,7 +18,7 @@ Usage:
 Commands:
     init     Initialize a new sgit repo
     list     Show the config for all repos in the config file
-    update   Update a sub repo
+    pull   Update a sub repo
     fetch    Runs git fetch on all repos
 
 Options:
@@ -27,12 +27,12 @@ Options:
 """
 
 
-sub_update_args = """
+sub_pull_args = """
 Usage:
-    sgit update [<repo> ...] [options]
+    sgit pull [<repo> ...] [options]
 
 Options:
-    <repo>       Name of repo to update
+    <repo>       Name of repo to pull
     -y, --yes    Answers yes to all questions (use with caution)
     -h, --help   Show this help message and exit
 """
@@ -93,8 +93,8 @@ def parse_cli():
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
-    if cli_args["<command>"] == "update":
-        sub_args = docopt(sub_update_args, argv=argv)
+    if cli_args["<command>"] == "pull":
+        sub_args = docopt(sub_pull_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
     elif cli_args["<command>"] == "list":
@@ -135,11 +135,11 @@ def run(cli_args, sub_args):
     if cli_args["<command>"] == "list":
         retcode = core.repo_list()
 
-    if cli_args["<command>"] == "update":
+    if cli_args["<command>"] == "pull":
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.update(repos)
+        retcode = core.pull(repos)
 
     if cli_args["<command>"] == "init":
         repo_name = sub_args["<name>"]
