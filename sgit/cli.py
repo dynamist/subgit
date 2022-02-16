@@ -17,8 +17,8 @@ Usage:
 
 Commands:
     init     Initialize a new sgit repo
-    list     Show the config for all repos in the config file
-    pull   Update a sub repo
+    status   Show status of each configured repo
+    pull     Update a sub repo
     fetch    Runs git fetch on all repos
 
 Options:
@@ -38,9 +38,9 @@ Options:
 """
 
 
-sub_list_args = """
+sub_status_args = """
 Usage:
-    sgit list [options]
+    sgit status [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -97,8 +97,8 @@ def parse_cli():
         sub_args = docopt(sub_pull_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
-    elif cli_args["<command>"] == "list":
-        sub_args = docopt(sub_list_args, argv=argv)
+    elif cli_args["<command>"] == "status":
+        sub_args = docopt(sub_status_args, argv=argv)
     elif cli_args["<command>"] == "fetch":
         sub_args = docopt(sub_fetch_args, argv=argv)
     else:
@@ -132,8 +132,8 @@ def run(cli_args, sub_args):
 
     core = Sgit(answer_yes=sub_args["--yes"])
 
-    if cli_args["<command>"] == "list":
-        retcode = core.repo_list()
+    if cli_args["<command>"] == "status":
+        retcode = core.repo_status()
 
     if cli_args["<command>"] == "pull":
         repos = sub_args["<repo>"]

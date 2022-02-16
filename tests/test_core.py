@@ -4,7 +4,8 @@
 import os
 
 # sgit imports
-from sgit.core import Sgit, DEFAULT_REPO_CONTENT
+from sgit.constants import *
+from sgit.core import Sgit
 from sgit.exceptions import SgitConfigException
 
 # 3rd party imports
@@ -65,9 +66,9 @@ def test_init_repo(sgit):
     assert retcode is None
 
     with open(sgit.sgit_config_file_path, "r") as stream:
-        content = stream.read()
+        content = yaml.load(stream)
 
-    assert content == DEFAULT_REPO_CONTENT
+    assert content == DEFAULT_REPO_CONTENT_YML
 
 
 def test_init_repo_file_exists(sgit):
@@ -108,13 +109,13 @@ def test_dump_config_file(sgit):
     assert file_content == mock_config_data
 
 
-def test_repo_list(sgit):
+def test_repo_status(sgit):
     retcode = sgit.init_repo()
     assert retcode is None
 
     # Assume that if no repo has been added we should get an error
     # The default configfile after init_repo is empty and usable here
-    retcode = sgit.repo_list()
+    retcode = sgit.repo_status()
     assert retcode == 1
 
 

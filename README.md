@@ -49,13 +49,13 @@ repos: { }
 
 To add any number of git repos that you want to clone by manually editing the `.sgit.yml` configuration file.
 
-Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
+Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit pull` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
 
 ```bash
-sgit update
+sgit pull
 
-# Or you can update a specific repo from your config file.
-sgit update pykwalify
+# Or you can pull a specific repo from your config file.
+sgit pull pykwalify
 ```
 
 Sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
@@ -63,7 +63,7 @@ Sgit relies on your own ssh config or other git config is properly setup and con
 You can view a summary of your current repo and config state with
 
 ```bash
-sgit list
+sgit status
 
  ** All repos **
 

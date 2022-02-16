@@ -82,7 +82,7 @@ class Sgit():
         with open(self.sgit_config_file_path, "w") as stream:
             yaml.dump(config_data, stream, indent=2, default_flow_style=False)
 
-    def repo_list(self):
+    def repo_status(self):
         config = self._get_config_file()
         repos = config.get("repos", {})
 
