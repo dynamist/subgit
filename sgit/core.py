@@ -37,7 +37,7 @@ class Sgit():
             self.sgit_config_file_name = os.path.basename(config_file_path)
             self.sgit_config_file_path = config_file_path
 
-    def init_repo(self):
+    def init_repo(self, repo_name=None, repo_url=None):
         """
         Algorithm:
             - Check if .sgit.yml exists
@@ -45,13 +45,23 @@ class Sgit():
                     - Exit out from script
                 - If do not exists
                     - Write new initial empty file to disk
+
+        If repo_name & repo_url is set to a string value, it will be attempted to be added to the initial
+        .sgit.yml config file as the first repo in your config. If these values is anything else the initial
+        config vill we written as empty.
         """
         if os.path.exists(self.sgit_config_file_path):
             log.error(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
 
+        tmp_config = DEFAULT_REPO_CONTENT_YML
+
+        if isinstance(repo_name, str) and isinstance(repo_url, str):
+            log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
+            tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
+
         with open(self.sgit_config_file_path, "w") as stream:
-            stream.write(DEFAULT_REPO_CONTENT)
+            self._dump_config_file(tmp_config)
             log.info(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
 
     def _get_config_file(self):
