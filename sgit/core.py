@@ -275,11 +275,12 @@ class Sgit():
 
         for name in repos:
             repo_path = os.path.join(os.getcwd(), name)
-            revision = config["repos"][name]["revision"]
+            repo_config = config["repos"][name]
+            revision = repo_config["revision"]
 
             if not os.path.exists(repo_path):
                 clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
-                clone_url = revision.get("url", None)
+                clone_url = repo_config.get("url", None)
 
                 if not clone_url:
                     raise SgitConfigException(f"Missing required key 'revision.url' on repo '{name}'")
