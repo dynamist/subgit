@@ -270,6 +270,10 @@ class Sgit():
 
             if not os.path.exists(repo_path):
                 clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
+                clone_url = revision.get("url", None)
+
+                if not clone_url:
+                    raise SgitConfigException(f"Missing required key 'revision.url' on repo '{name}'")
 
                 try:
                     repo = Repo.clone_from(
