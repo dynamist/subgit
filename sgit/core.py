@@ -148,20 +148,29 @@ class Sgit():
             log.error(f"No repos to fetch found")
             return 1
 
+        missing_any_repo = False
+
         for repo_name in repos_to_fetch:
             try:
                 repo_path = os.path.join(os.getcwd(), repo_name)
                 git_repo = Repo(repo_path)
-
-                log.info(f"Fetching git repo '{repo_name}'")
-                fetch_results = git_repo.remotes.origin.fetch()
-                log.info(f"Fetching completed for repo '{repo_name}'")
-
-                for fetch_result in fetch_results:
-                    log.info(f" - Fetch result: {fetch_result.name}")
             except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching")
-                return 1
+                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
+                missing_any_repo = True
+
+        if missing_any_repo:
+            return 1
+
+        for repo_name in repos_to_fetch:
+            repo_path = os.path.join(os.getcwd(), repo_name)
+            git_repo = Repo(repo_path)
+
+            log.info(f"Fetching git repo '{repo_name}'")
+            fetch_results = git_repo.remotes.origin.fetch()
+            log.info(f"Fetching completed for repo '{repo_name}'")
+
+            for fetch_result in fetch_results:
+                log.info(f" - Fetch result: {fetch_result.name}")
 
         log.info(f"Fetching for all repos completed")
         return 0
