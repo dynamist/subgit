@@ -42,7 +42,6 @@ setup(
         "dev": [
             "pylint",
             "ptpython",
-            "ptpdb",
         ],
         "validation": [
             "pykwalify",
