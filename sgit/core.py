@@ -86,23 +86,86 @@ class Sgit():
         config = self._get_config_file()
         repos = config.get("repos", {})
 
-        print(f" ** All repos **")
-
         if not repos:
             print(f"  No repos found")
             return 1
 
         for repo_name, repo_data in repos.items():
-            print(f"")
-            print(f" - {repo_name}")
-            print(f"    URL: {repo_data.get('url')}")
+            print(f"{repo_name}")
+            print(f"  Url: {repo_data.get('url', 'NOT SET')}")
 
-            if "branch" in repo_data["revision"]:
-                print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
-            elif "tag" in repo_data["revision"]:
-                print(f"    Tag: {repo_data.get('revision', {}).get('tag', None)}")
+            repo_disk_path = os.path.join(os.getcwd(), repo_name)
+            print(f"  Disk path: {repo_disk_path}")
+
+            try:
+                repo = Repo(repo_disk_path)
+                cloned_to_disk = True
+            except git.exc.NoSuchPathError:
+                cloned_to_disk = False
+            
+            print(f"  Cloned: {'Yes' if cloned_to_disk else 'No'}")
+
+            if cloned_to_disk:
+                file_cwd = os.path.join(os.getcwd(), repo_name, ".git/FETCH_HEAD")
+
+                if os.path.exists(file_cwd):
+                    from subprocess import PIPE, Popen
+
+                    command = f"stat -c %y {file_cwd}"
+                    process = Popen(command, stdout=PIPE, stderr=None, shell=True)
+                    output, stderr = process.communicate()
+                    parsed_output = str(output).replace('\\n', '')
+                    print(f"  Last pull/fetch: {parsed_output}")
+                else:
+                    print(f"  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
             else:
-                raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
+                print(f"  Last pull/fetch: UNKNOWN repo not cloned to disk")
+
+            if cloned_to_disk:
+                repo = Repo(repo_disk_path)
+                print(f"  Repo is dirty? {'Yes' if repo.is_dirty() else 'No'}")
+            else:
+                print(f"  Repo is dirty? ---")
+
+            branch = repo_data['revision'].get('branch', '---')
+            commit = repo_data['revision'].get('commit', '---')
+            tag = repo_data['revision'].get('tag', '---')
+
+            print(f"  Revision:")
+
+            print(f"    branch: {branch}")
+            if branch != "---":
+                if branch in repo.heads:
+                    commit_hash = str(repo.heads[branch].commit)
+                    commit_message = str(repo.heads[branch].commit.summary)
+                    has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                else:
+                    commit_hash = "Local branch not found"
+                    commit_message = "Local branch not found"
+                    has_new = "---"
+
+                print(f"      commit hash: {commit_hash}")
+                print(f"      commit message: '{commit_message}'")
+                print(f"      branch exists in origin? {branch in repo.remotes.origin.refs}")
+                print(f"      has newer commit in origin? {has_new}")
+
+            print(f"    commit: {commit}")
+            if commit != "---":
+                print(f"FIXME: Not implemented yet")
+
+            print(f"    tag: {tag}")
+            if tag != "---":
+                if tag in repo.tags:
+                    commit_hash = str(repo.tags[tag].commit)
+                    commit_summary = str(repo.tags[tag].commit.summary)
+                else:
+                    commit_hash = "Tag not found"
+                    commit_summary = "---"
+
+                print(f"      commit hash: {commit_hash}")
+                print(f"      commit message: '{commit_summary}'")
+
+            print(f"")
 
     def yes_no(self, question):
         print(question)
