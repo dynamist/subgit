@@ -13,6 +13,7 @@ from sgit.exceptions import *
 
 # 3rd party imports
 import git
+import packaging
 from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
@@ -337,6 +338,8 @@ class Sgit():
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
         for name in repos:
+            log.info("")
+
             repo_path = os.path.join(os.getcwd(), name)
             repo_config = config["repos"][name]
             revision = repo_config["revision"]
@@ -612,22 +615,29 @@ class Sgit():
                 return sequence[0]
             else:
                 log.debug(f"Selection query")
-                spec = SpecifierSet(selection_query)
 
-                filtered_versions = list(
-                    spec.filter([str(item) for item in sequence]),
-                )
+                try:
+                    spec = SpecifierSet(selection_query)
 
-                log.debug(f"filtered_versions")
-                log.debug(filtered_versions)
+                    filtered_versions = list(
+                        spec.filter([str(item) for item in sequence]),
+                    )
 
-                return filtered_versions[-1]
-        elif selection_method == SelectionMethods.EXACT:
+                    log.debug(f"filtered_versions")
+                    log.debug(filtered_versions)
+
+                    return filtered_versions[-1]
+                except packaging.specifiers.InvalidSpecifier:
+                    log.warning(f"WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value")
+                    selection_method = SelectionMethods.EXACT
+        
+        if selection_method == SelectionMethods.EXACT:
             for item in sequence:
                 if str(item) == selection_query:
                     return item
 
             # Query not found in sequence, return None
             return None
-        else:
+        
+        if selection_method not in SelectionMethods:
             raise SgitConfigException(f"Unsupported select algorithm selected")
