@@ -639,5 +639,5 @@ class Sgit():
             # Query not found in sequence, return None
             return None
         
-        if selection_method not in SelectionMethods:
+        if selection_method not in SelectionMethods.__members__:
             raise SgitConfigException(f"Unsupported select algorithm selected")
