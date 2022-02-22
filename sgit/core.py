@@ -154,7 +154,16 @@ class Sgit():
             if commit != "---":
                 print(f"FIXME: Not implemented yet")
 
+            # Extract tag from inner value if that is set
+            #  {revision: {tag: {select: {value: foo}}}}
+            if isinstance(tag, dict):
+                tag = tag["select"]
+
+                if isinstance(tag, dict):
+                    tag = tag["value"]
+
             print(f"    tag: {tag}")
+
             if tag != "---":
                 if tag in repo.tags:
                     commit_hash = str(repo.tags[tag].commit)
