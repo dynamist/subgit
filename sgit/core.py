@@ -425,10 +425,14 @@ class Sgit():
                     if select_config is None:
                         raise SgitConfigException(f"select key is required in all tag revisions")
 
+                    log.debug(f"select_config: {select_config}")
+
                     # We have sub options to extract out
                     if isinstance(select_config, dict):
-                        select_config = select_config["value"]
                         select_method_value = select_config["method"]
+                        select_config = select_config["value"]
+                        
+                        log.debug(f"select_method: {select_method_value}")
 
                         select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
 
@@ -448,8 +452,7 @@ class Sgit():
                 # Main tag parsing logic
 
                 git_repo_tags = [
-                    str(tag)
-                    for tag in repo.tags
+                    tag for tag in repo.tags
                 ]
                 log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
@@ -514,9 +517,9 @@ class Sgit():
                 if filter_regex.strip() == "":
                     raise SgitConfigException(f"ERROR: Empty regex filter string is not allowed")
 
-                log.debug(f"Filtering item '{item}' against regex '{filter_regex}")
+                log.debug(f"Filtering item '{str(item)}' against regex '{filter_regex}")
 
-                match_result = re.match(filter_regex, item)
+                match_result = re.match(filter_regex, str(item))
 
                 if match_result:
                     log.debug(f"Filter match result hit: {match_result}")
@@ -555,7 +558,7 @@ class Sgit():
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
-            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(x)))
+            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(str(x))))
         elif method == OrderAlgorithms.TIME:
             log.debug(f"Ordering sequence of items by TIME they was created, input:")
             log.debug(sequence)
@@ -608,12 +611,11 @@ class Sgit():
             elif selection_query == "first":
                 return sequence[0]
             else:
+                log.debug(f"Selection query")
                 spec = SpecifierSet(selection_query)
 
                 filtered_versions = list(
-                    spec.filter(
-                        sequence,
-                    )
+                    spec.filter([str(item) for item in sequence]),
                 )
 
                 log.debug(f"filtered_versions")
@@ -622,7 +624,7 @@ class Sgit():
                 return filtered_versions[-1]
         elif selection_method == SelectionMethods.EXACT:
             for item in sequence:
-                if item == selection_query:
+                if str(item) == selection_query:
                     return item
 
             # Query not found in sequence, return None
