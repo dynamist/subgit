@@ -7,10 +7,14 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   linters:
     name: >-
-      ${{ matrix.os }}-${{ matrix.env.TOXENV }}
+      ${{ matrix.env.TOXENV }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -34,21 +38,25 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0 # needed by setuptools-scm
+
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install tox
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install --upgrade tox
+
       - name: Log installed dists
         run: >-
           python3 -m pip freeze --all
+
       - name: >-
           Initialize tox envs
         run: >-
-          python -m
+          python3 -m
           tox
           --parallel auto
           --parallel-live
@@ -56,11 +64,133 @@ jobs:
           --skip-missing-interpreters false
           -vv
         env: ${{ matrix.env }}
+
       - name: Test with tox
         run: |
-          python -m tox --parallel auto --parallel-live
+          python3 -m tox --parallel auto --parallel-live
+
       - name: Archive logs
         uses: actions/upload-artifact@v2
         with:
           name: logs.zip
           path: .tox/**/log/
+        continue-on-error: true
+
+  unit:
+    name: ${{ matrix.name || matrix.tox_env }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell | 'bash' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          # - "3.7"
+          # - "3.8"
+          # - "3.9"
+          - "3.10"
+        os:
+          # - ubuntu-18.04
+          - ubuntu-20.04
+        include:
+          # - tox_env: py37
+          #   os: ubuntu-20.04
+          #   python-version: "3.7"
+          # - tox_env: py38
+          #   os: ubuntu-20.04
+          #   python-version: "3.8"
+          # - tox_env: py39
+          #   os: ubuntu-20.04
+          #   python-version: "3.9"
+          - tox_env: py310
+            os: ubuntu-20.04
+            python-version: "3.10"
+    env:
+      TOX_PARALLEL_NO_SPINNER: 1
+      FORCE_COLOR: 1
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # needed by setuptools-scm
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: run ./tools/test-setup.sh
+        run: |
+          ./tools/test-setup.sh
+
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade tox
+          python3 -m pip install --upgrade 'coverage[toml]'
+
+      - name: Log installed dists
+        run: >-
+          python3 -m pip freeze --all
+
+      - name: >-
+          Initialize tox envs
+        run: >-
+          python3 -m
+          tox
+          --parallel auto
+          --parallel-live
+          --notest
+          --skip-missing-interpreters false
+          -vv
+        env:
+          TOXENV: ${{ matrix.tox_env }}
+
+      - name: "Test with tox: ${{ matrix.tox_env }}"
+        run: |
+          python3 -m tox --parallel auto --parallel-live
+        env:
+          TOXENV: ${{ matrix.tox_env }}
+
+      - name: Combine coverage data
+        # produce a single .coverage file at repo root
+        run: coverage combine .tox/.coverage.*
+
+      - name: Upload coverage data
+        if: "runner.os == 'Linux'"
+        uses: codecov/codecov-action@v1
+        with:
+          name: ${{ matrix.tox_env }}
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
+
+      - name: Archive logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs.zip
+          path: .tox/**/log/
+        continue-on-error: true
+
+      - name: Report junit failures
+        # cspell:disable-next-line
+        uses: shyim/junit-report-annotations-action@3d2e5374f2b13e70f6f3209a21adfdbc42c466ae
+        with:
+          path: .tox/junit.*.xml
+        if: always()
+
+  check: # This job does nothing and is only used for the branch protection
+    if: always()
+
+    needs:
+      - linters
+      - unit
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
