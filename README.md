@@ -1,6 +1,6 @@
 # sgit
 
-The name came originally from "Submodules Git", or more commonly "Sub Git".
+The name came originally from "Submodule Git", or more commonly "Sub Git".
 
 The main purpose of this tool is to be used as a sync for cases to pull together a set of different Git repos into a deterministic directory tree. It is used to collect various individual parts into a whole.
 
@@ -15,11 +15,11 @@ This tool has been primarly constructed to be a part inside a CI/CD solution whe
 
 Sgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Sgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
 
-In addition to `sgit`, you will also get an `git-sub` command, that when used as `git sub [...]` will be invoked properly. A neat way to expose this tool in a way that integrates with your Git workflow.
+In addition to `sgit` (and `subgit`), you will also get an `git-sub` command, that when used as `git sub [...]` will be invoked properly. A neat way to expose this tool in a way that integrates with your Git workflow.
 
 ### Quickstart
 
-Install the tool with `pip install py-sgit`. The tool requires python version >= 3.8.0
+Install the tool with `pip install subgit`. The tool requires python version 3.8 or later.
 
 Create a temporary folder where you want your sub repos to be located
 
@@ -48,10 +48,10 @@ To add any number of git repos that you want to clone.
 You can optionally specify the target branch you want to clone by adding it at after the clone url. It will default to `master` branch as most git repos still use that. If you are using `main` as your default branch you need to specify that explicitly.
 
 ```bash
-sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git master
+sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git main
 ```
 
-Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a inidial `git clone` before moving to your selected revision.
+Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
 
 ```bash
 sgit update
@@ -65,13 +65,7 @@ sgit update pykwalify
 
 Sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
-You can view a summary of your current repo and config state by running
-
-```bash
-sgit list
-```
-
-Output
+You can view a summary of your current repo and config state by running `sgit list`. An example output:
 
 ```
  ** All repos **
@@ -86,56 +80,45 @@ Output
 ```
 
 
-## Update a repos revision
+## Change target branch, tag or revision
 
-The command `sgit repo set` is used to manipulate existing repos in a config file.
+The command `sgit repo set` is used to manipulate existing repos in a config file. Be sure to run `sgit update` to update your working directory to the change.
 
 
-### Update/set a branch revision
+### Target a specified branch
 
-To move a repo to a new branch if you want for example to switch from `master` to `develop`.
+To move a repo to a new branch if you want for example to switch from `master` to `develop` and checkout the branch:
 
 ```bash
 sgit repo set pykwalify branch develop
-```
-
-Update the git repo and checkout the branch
-
-```bash
 sgit update pykwalify
 ```
 
-There is much more extensive docuemtnation and examples for this feature in `docs/revision-branch.md`.
+> :information_source: See `docs/revision-branch.md` for more examples.
 
 
-### Update/set a tag revision
+### Target a specified tag
 
-To checkout a tag in a repo.
+To checkout a tag in a repo change the configuration for the specified git repo and checkout the tag:
 
 ```bash
 sgit repo set pykwalify tag 1.0.0
-```
-
-Update the git repo and checkout the tag
-
-```bash
 sgit update pykwalify
 ```
 
-There is much more extensive documentation and examples for this feature in `docs/revision-tag.md`
-
+> :information_source: See `docs/revision-tag.md` for more examples.
 
 ## Fetch changes in a repo
 
 If you want to `git fetch` all or a subset of git repos in your config then you can use the `sgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
 
-Sgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
+The fetch command supports selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
 
 ```bash
 # Fetch all repos in sequence
 sgit fetch
 
-# Fetch one specific repo
+# Fetch one specified repo
 sgit fetch pykwalify
 ```
 
@@ -191,4 +174,4 @@ Python 2.7 is EOL and that version will not be supported at all moving forward.
 | License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
 | Copyright              | `Copyright (c) 2019-2021 Dynamist AB` |
 | git repo               | `git@github.com:dynamist/sgit.git` |
-| install stable         | `pip install py-sgit` |
+| install stable         | `pip install subgit` |
