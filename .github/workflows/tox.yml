@@ -123,7 +123,7 @@ jobs:
 
       - name: run ./tools/test-setup.sh
         run: |
-          ./tools/test-setup.sh
+          bash tools/test-setup.sh
 
       - name: Install tox
         run: |
