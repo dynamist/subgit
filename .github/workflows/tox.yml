@@ -1,0 +1,67 @@
+---
+name: tox
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  linters:
+    name: >-
+      ${{ matrix.env.TOXENV }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+          - 3.10
+        os:
+          - ubuntu-18.04
+          - ubuntu-20.04
+        env:
+          - TOXENV: lint
+          - TOXENV: docs
+    env:
+      TOX_PARALLEL_NO_SPINNER: 1
+      FORCE_COLOR: 1
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # needed by setuptools-scm
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install tox
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade tox
+      - name: Log installed dists
+        run: >-
+          python3 -m pip freeze --all
+      - name: >-
+          Initialize tox envs
+        run: >-
+          python -m
+          tox
+          --parallel auto
+          --parallel-live
+          --notest
+          --skip-missing-interpreters false
+          -vv
+        env: ${{ matrix.env }}
+      - name: Test with tox
+        run: |
+          python -m tox --parallel auto --parallel-live
+      - name: Archive logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs.zip
+          path: .tox/**/log/
