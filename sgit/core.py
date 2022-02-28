@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+from subprocess import PIPE, Popen
 
 # sgit imports
 from sgit.constants import *
@@ -40,13 +41,6 @@ class Sgit():
 
     def init_repo(self, repo_name=None, repo_url=None):
         """
-        Algorithm:
-            - Check if .sgit.yml exists
-                - If exists:
-                    - Exit out from script
-                - If do not exists
-                    - Write new initial empty file to disk
-
         If repo_name & repo_url is set to a string value, it will be attempted to be added to the initial
         .sgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
@@ -110,8 +104,6 @@ class Sgit():
                 file_cwd = os.path.join(os.getcwd(), repo_name, ".git/FETCH_HEAD")
 
                 if os.path.exists(file_cwd):
-                    from subprocess import PIPE, Popen
-
                     command = f"stat -c %y {file_cwd}"
                     process = Popen(command, stdout=PIPE, stderr=None, shell=True)
                     output, stderr = process.communicate()
@@ -265,16 +257,6 @@ class Sgit():
         To pull all repos defined in the configuration send in names=None
 
         To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
-
-        Algorithm:
-            - If the folder do not exists
-                - clone the repo with Repo.clone_from
-                - Update the rev to specified rev
-            - If the folder do exists
-                - If working_tree has any changes in it
-                    - Throw error about working tree has changes
-                - If working tree is empty
-                    - Reset the repo to the specified rev
         """
         log.debug(f"Repo pull - {names}")
 
@@ -549,7 +531,7 @@ class Sgit():
 
         return filtered_sequence
 
-    def _order(self, sequence, method):
+    def _order(self, sequence, order_method):
         """
         Given a sequence of git objects, order them based on what ordering algorithm selected.
 
@@ -560,25 +542,27 @@ class Sgit():
 
         Supports OrderAlgorithm methods: ALPHABETICAL, TIME, SEMVER
 
+        If unsupported order_method is specified, it will thro SgitConfigException
+
         Returns a new list with the sorted sequence of items
         """
         ordered_sequence = []
 
-        if method == OrderAlgorithms.SEMVER:
+        if order_method == OrderAlgorithms.SEMVER:
             log.debug(f"Ordering sequence of items by PEP440 SEMVER logic")
             log.debug(sequence)
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
             ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(str(x))))
-        elif method == OrderAlgorithms.TIME:
+        elif order_method == OrderAlgorithms.TIME:
             log.debug(f"Ordering sequence of items by TIME they was created, input:")
             log.debug(sequence)
 
             # When sorting by time the latest item in the sequence with the highest or most recent time
             # will be on index[0] in the returned sequence
             ordered_sequence = list(sorted(sequence, key=lambda t: t[1]))
-        elif method == OrderAlgorithms.ALPHABETICAL:
+        elif order_method == OrderAlgorithms.ALPHABETICAL:
             log.debug(f"Order sequence of items by ALPHABETICAL string order")
             log.debug(sequence)
 
@@ -596,9 +580,9 @@ class Sgit():
         Given a sequence of objects, perform the selection based on the selection_method and the
         logic that it implements.
 
-        Supports: SEMVER, EXACT
+        Supported selection methods: SEMVER, EXACT
 
-        Defaults to SEMVER logic
+        If unsupported selection_method is specified, it will throw SgitConfigException
 
         SEMVER: It will run you selection against the sequence of items and with a library supporting
                 PEP440 semver comparison logic. Important note here is that it will take the highest
