@@ -55,7 +55,7 @@ class Sgit():
             log.error(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
 
-        tmp_config = DEFAULT_REPO_CONTENT_YML
+        tmp_config = DEFAULT_REPO_DICT
 
         if isinstance(repo_name, str) and isinstance(repo_url, str):
             log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")

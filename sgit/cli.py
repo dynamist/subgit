@@ -16,9 +16,9 @@ Usage:
     sgit <command> [options] [<args> ...]
 
 Commands:
-    fetch    Runs git fetch on all repos
+    fetch    Fetch one or all Git repos
     init     Initialize a new sgit repo
-    pull     Update a sub repo
+    pull     Update one or all Git repos
     status   Show status of each configured repo
 
 Options:

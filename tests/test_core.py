@@ -68,7 +68,7 @@ def test_init_repo(sgit):
     with open(sgit.sgit_config_file_path, "r") as stream:
         content = yaml.load(stream)
 
-    assert content == DEFAULT_REPO_CONTENT_YML
+    assert content == DEFAULT_REPO_DICT
 
 
 def test_init_repo_file_exists(sgit):

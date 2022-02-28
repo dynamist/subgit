@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-DEFAULT_REPO_CONTENT = "repos: { }\n"
-DEFAULT_REPO_CONTENT_YML = {"repos": {}}
+DEFAULT_REPO_DICT = {"repos": {}}
 
 __all__ = [
-    "DEFAULT_REPO_CONTENT",
-    "DEFAULT_REPO_CONTENT_YML",
+    "DEFAULT_REPO_DICT",
 ]
