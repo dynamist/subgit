@@ -107,7 +107,7 @@ Create a new git branch from the `master` branch and commit all changes you want
 Requirement for a merge request
 
 - Pytests should always pass and be green
-- Any gitlab actions or MR specific tests/validation shold be green
+- Any gitlab actions or PR specific tests/validation shold be green
 - No merge conflicts with master branch, if you have then you either merge master into your branch and resolve conflicts, or you rebase your branch ontop of master branch
 - Always do basic useability tests with most common commands as tests do not always show errors with everything
  
