@@ -13,11 +13,11 @@ from docopt import docopt, extras, Option, DocoptExit
 
 base_args = """
 Usage:
-    sgit <command> [options] [<args> ...]
+    subgit <command> [options] [<args> ...]
 
 Commands:
     fetch    Fetch one or all Git repos
-    init     Initialize a new sgit repo
+    init     Initialize a new subgit repo
     pull     Update one or all Git repos
     status   Show status of each configured repo
 
@@ -29,7 +29,7 @@ Options:
 
 sub_fetch_args = """
 Usage:
-    sgit fetch [<repo> ...] [options]
+    subgit fetch [<repo> ...] [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -39,7 +39,7 @@ Options:
 
 sub_init_args = """
 Usage:
-    sgit init [<name> <url>] [options]
+    subgit init [<name> <url>] [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -49,7 +49,7 @@ Options:
 
 sub_pull_args = """
 Usage:
-    sgit pull [<repo> ...] [options]
+    subgit pull [<repo> ...] [options]
 
 Options:
     <repo>       Name of repo to pull
@@ -60,7 +60,7 @@ Options:
 
 sub_status_args = """
 Usage:
-    sgit status [options]
+    subgit status [options]
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
@@ -70,25 +70,25 @@ Options:
 
 def parse_cli():
     """Parse the CLI arguments and options."""
-    import sgit
+    import subgit
 
     try:
         cli_args = docopt(
             base_args,
             options_first=True,
-            version=sgit.__version__,
+            version=subgit.__version__,
             help=True,
         )
     except DocoptExit:
         extras(
             True,
-            sgit.__version__,
+            subgit.__version__,
             [Option("-h", "--help", 0, True)],
             base_args,
         )
 
     # Set INFO by default, else DEBUG log level
-    sgit.init_logging(5 if "DEBUG" in os.environ else 4)
+    subgit.init_logging(5 if "DEBUG" in os.environ else 4)
     log = logging.getLogger(__name__)
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
@@ -104,7 +104,7 @@ def parse_cli():
     else:
         extras(
             True,
-            sgit.__version__,
+            subgit.__version__,
             [Option("-h", "--help", 0, True)],
             base_args,
         )
@@ -128,9 +128,9 @@ def run(cli_args, sub_args):
     log.debug(cli_args)
     log.debug(sub_args)
 
-    from sgit.core import Sgit
+    from subgit.core import SubGit
 
-    core = Sgit(answer_yes=sub_args["--yes"])
+    core = SubGit(answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]

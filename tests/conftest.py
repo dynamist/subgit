@@ -3,15 +3,15 @@
 # python std lib
 
 # rediscluster imports
-from sgit.core import Sgit
+from subgit.core import SubGit
 
 # 3rd party imports
 import pytest
 
 
 @pytest.fixture()
-def sgit(tmpdir, *args, **kwargs):
+def subgit(tmpdir, *args, **kwargs):
     """ """
-    conf_file = tmpdir.join(".sgit.yml")
+    conf_file = tmpdir.join(".subgit.yml")
 
-    return Sgit(config_file_path=conf_file, *args, **kwargs)
+    return SubGit(config_file_path=conf_file, *args, **kwargs)

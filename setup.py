@@ -14,12 +14,12 @@ setup(
     maintainer="Johan Andersson",
     maintainer_email="johan@dynamist.se",
     license="Apache License 2.0",
-    packages=["sgit"],
+    packages=["subgit"],
     url="http://github.com/dynamist/sgit",
     entry_points={
         "console_scripts": [
-            "sgit = sgit.cli:cli_entrypoint",
-            "subgit = sgit.cli:cli_entrypoint",
+            "sgit = subgit.cli:cli_entrypoint",
+            "subgit = subgit.cli:cli_entrypoint",
         ],
     },
     install_requires=[

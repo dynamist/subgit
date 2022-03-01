@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" sgit """
+""" subgit """
 
 # python stdlib
 import logging

@@ -7,10 +7,10 @@ import re
 import sys
 from subprocess import PIPE, Popen
 
-# sgit imports
-from sgit.constants import *
-from sgit.enums import *
-from sgit.exceptions import *
+# subgit imports
+from subgit.constants import *
+from subgit.enums import *
+from subgit.exceptions import *
 
 # 3rd party imports
 import git
@@ -24,29 +24,29 @@ from ruamel import yaml
 log = logging.getLogger(__name__)
 
 
-class Sgit():
+class SubGit():
     def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
 
         if not config_file_path:
-            self.sgit_config_file_name = ".sgit.yml"
+            self.subgit_config_file_name = ".subgit.yml"
 
-            self.sgit_config_file_path = os.path.join(
+            self.subgit_config_file_path = os.path.join(
                 os.getcwd(),
-                self.sgit_config_file_name,
+                self.subgit_config_file_name,
             )
         else:
-            self.sgit_config_file_name = os.path.basename(config_file_path)
-            self.sgit_config_file_path = config_file_path
+            self.subgit_config_file_name = os.path.basename(config_file_path)
+            self.subgit_config_file_path = config_file_path
 
     def init_repo(self, repo_name=None, repo_url=None):
         """
         If repo_name & repo_url is set to a string value, it will be attempted to be added to the initial
-        .sgit.yml config file as the first repo in your config. If these values is anything else the initial
+        .subgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
         """
-        if os.path.exists(self.sgit_config_file_path):
-            log.error(f"File '{self.sgit_config_file_name}' already exists on disk")
+        if os.path.exists(self.subgit_config_file_path):
+            log.error(f"File '{self.subgit_config_file_name}' already exists on disk")
             return 1
 
         tmp_config = DEFAULT_REPO_DICT
@@ -55,16 +55,16 @@ class Sgit():
             log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
             tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
 
-        with open(self.sgit_config_file_path, "w") as stream:
+        with open(self.subgit_config_file_path, "w") as stream:
             self._dump_config_file(tmp_config)
-            log.info(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
+            log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
 
     def _get_config_file(self):
-        if not os.path.exists(self.sgit_config_file_path):
-            log.error("No .sgit.yml file exists in current CWD")
+        if not os.path.exists(self.subgit_config_file_path):
+            log.error("No .subgit.yml file exists in current CWD")
             sys.exit(1)
 
-        with open(self.sgit_config_file_path, "r") as stream:
+        with open(self.subgit_config_file_path, "r") as stream:
             return yaml.load(stream, Loader=yaml.Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
@@ -74,7 +74,7 @@ class Sgit():
         Writes the entire config file to the given disk path set
         in the method constructor.
         """
-        with open(self.sgit_config_file_path, "w") as stream:
+        with open(self.subgit_config_file_path, "w") as stream:
             yaml.dump(config_data, stream, indent=2, default_flow_style=False)
 
     def repo_status(self):
@@ -291,10 +291,10 @@ class Sgit():
             repos = names
         else:
             log.debug(f"Names {names}")
-            raise SgitConfigException(f"Unsuported value type for argument names")
+            raise SubGitConfigException(f"Unsuported value type for argument names")
 
         if not repos:
-            raise SgitConfigException(f"No valid repositories found")
+            raise SubGitConfigException(f"No valid repositories found")
 
         # Validation step across all repos to manipulate that they are not dirty
         # or anything uncommited that would break the code trees.
@@ -340,7 +340,7 @@ class Sgit():
                 clone_url = repo_config.get("url", None)
 
                 if not clone_url:
-                    raise SgitConfigException(f"Missing required key 'url' on repo '{name}'")
+                    raise SubGitConfigException(f"Missing required key 'url' on repo '{name}'")
 
                 try:
                     # Cloning a repo w/o a specific commit/branch/tag it will clone out whatever default
@@ -352,7 +352,7 @@ class Sgit():
                     )
                     log.info(f'Successfully cloned repo "{name}" from remote server')
                 except Exception as e:
-                    raise SgitException(f'Clone "{name}" failed, exception: {e}')
+                    raise SubGitException(f'Clone "{name}" failed, exception: {e}')
 
             log.debug(f"TODO: Parse for any changes...")
             # TODO: Check that origin remote exists
@@ -403,7 +403,7 @@ class Sgit():
                         filter_config = [filter_config]
 
                     if not isinstance(filter_config, list):
-                        raise SgitConfigException(f"filter option must be a list of items or a single string")
+                        raise SubGitConfigException(f"filter option must be a list of items or a single string")
 
                     order_config = tag_config.get("order", None)
                     if order_config is None:
@@ -412,12 +412,12 @@ class Sgit():
                         order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
 
                         if order_algorithm is None:
-                            raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
+                            raise SubGitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
 
                     select_config = tag_config.get("select", None)
                     select_method = None
                     if select_config is None:
-                        raise SgitConfigException(f"select key is required in all tag revisions")
+                        raise SubGitConfigException(f"select key is required in all tag revisions")
 
                     log.debug(f"select_config: {select_config}")
 
@@ -431,11 +431,11 @@ class Sgit():
                         select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
 
                         if select_method is None:
-                            raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
+                            raise SubGitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
                     else:
                         select_method = SelectionMethods.SEMVER
                 else:
-                    raise SgitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
+                    raise SubGitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
 
                 log.debug(f"{filter_config}")
                 log.debug(f"{order_config}")
@@ -462,7 +462,7 @@ class Sgit():
                 log.debug(select_output)
 
                 if not select_output:
-                    raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
+                    raise SubGitRepoException(f"No git tag could be parsed out with the current repo configuration")
 
                 log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
 
@@ -493,10 +493,10 @@ class Sgit():
         log.debug(f"Running clean step on data")
 
         if not isinstance(regex_list, list):
-            raise SgitConfigException(f"sequence for clean step must be a list of items")
+            raise SubGitConfigException(f"sequence for clean step must be a list of items")
 
         if not isinstance(regex_list, list):
-            raise SgitConfigException(f"regex_list for clean step must be a list of items")
+            raise SubGitConfigException(f"regex_list for clean step must be a list of items")
 
         # If we have no regex to filter against, then return original list unaltered
         if len(regex_list) == 0:
@@ -505,11 +505,11 @@ class Sgit():
         for item in sequence:
             for filter_regex in regex_list:
                 if not isinstance(filter_regex, str):
-                    raise SgitConfigException(f"ERROR: filter regex must be a string")
+                    raise SubGitConfigException(f"ERROR: filter regex must be a string")
 
                 # A empty regex string is not valid
                 if filter_regex.strip() == "":
-                    raise SgitConfigException(f"ERROR: Empty regex filter string is not allowed")
+                    raise SubGitConfigException(f"ERROR: Empty regex filter string is not allowed")
 
                 log.debug(f"Filtering item '{str(item)}' against regex '{filter_regex}")
 
@@ -542,7 +542,7 @@ class Sgit():
 
         Supports OrderAlgorithm methods: ALPHABETICAL, TIME, SEMVER
 
-        If unsupported order_method is specified, it will thro SgitConfigException
+        If unsupported order_method is specified, it will thro SubGitConfigException
 
         Returns a new list with the sorted sequence of items
         """
@@ -569,7 +569,7 @@ class Sgit():
             # By default sorted will do alphabetical sort
             ordered_sequence = list(sorted(sequence))
         else:
-            raise SgitConfigException(f"Unsupported ordering algorithm selected")
+            raise SubGitConfigException(f"Unsupported ordering algorithm selected")
 
         log.debug(f"Ordered sequence result: {ordered_sequence}")
 
@@ -582,7 +582,7 @@ class Sgit():
 
         Supported selection methods: SEMVER, EXACT
 
-        If unsupported selection_method is specified, it will throw SgitConfigException
+        If unsupported selection_method is specified, it will throw SubGitConfigException
 
         SEMVER: It will run you selection against the sequence of items and with a library supporting
                 PEP440 semver comparison logic. Important note here is that it will take the highest
@@ -633,4 +633,4 @@ class Sgit():
             return None
         
         if selection_method not in SelectionMethods.__members__:
-            raise SgitConfigException(f"Unsupported select algorithm selected")
+            raise SubGitConfigException(f"Unsupported select algorithm selected")
