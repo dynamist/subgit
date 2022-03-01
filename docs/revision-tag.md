@@ -67,10 +67,10 @@ repos:
 
 ## Examples
 
-Basic example. This example will not filter out any items, it will order them by semver and the selection want the latest tag based on semver comparison. This will result in `1.0.0` as the output when doing `sgit pull`
+Basic example. This example will not filter out any items, it will order them by semver and the selection want the latest tag based on semver comparison. This will result in `1.0.0` as the output when doing `subgit pull`
 
 ```yaml
-# .sgit.yml
+# .subgit.yml
 repos:
   pykwalify:
     url: git@github.com:Grokzen/pykwalify.git
@@ -90,7 +90,7 @@ repos:
 This example will ignore the semver and order all tags by time and pick the last one. Note this example is not super realistic as the ordering based on the semver looks wrong. But in this case we are working with git-flow model and we have support branches where old minor version tags can be created after new:er releases have been done. Time ordering is more suited for single release branch repos and not git-flow model git repos.
 
 ```yaml
-# .sgit.yml
+# .subgit.yml
 repos:
   pykwalify:
     url: git@github.com:Grokzen/pykwalify.git
@@ -112,7 +112,7 @@ In this example we will filter out v1.0.0 as that is an unwanted tag format and 
 parsing for the latest tag. It will default to semver comparison and select the latest version 0.9.0.
 
 ```yaml
-# .sgit.yml
+# .subgit.yml
 repos:
   pykwalify:
     url: git@github.com:Grokzen/pykwalify.git
@@ -136,7 +136,7 @@ v1.0.0
 In this example we want to have the latest semver version. It will extract out the semver version from all tags based on the regex and then do a semver comparison on the result list of items.
 
 ```yaml
-# .sgit.yml
+# .subgi.yml
 repos:
   pykwalify:
     url: git@github.com:Grokzen/pykwalify.git
@@ -160,7 +160,7 @@ v0.8.0
 In this example we can limit the version we want to select to a older tag based on semver comparison.
 
 ```yaml
-# .sgit.yml
+# .subgit.yml
 repos:
   pykwalify:
     url: git@github.com:Grokzen/pykwalify.git

@@ -10,7 +10,7 @@ repos:
       branch: master
 ```
 
-This will clone the git repo and for each `sgit pull` you make after the initial clone, it will do a git pull on the given branch to move your clone to the latest commit on this branch.
+This will clone the git repo and for each `subgit pull` you make after the initial clone, it will do a git pull on the given branch to move your clone to the latest commit on this branch.
 
 In the case you change the branch to a new one, it will fetch the latest commits for that other branch and do a git checkout of it locally.
 
@@ -20,7 +20,7 @@ In the case you change the branch to a new one, it will fetch the latest commits
 To update your git cloned repos to a new git revision, branch or tag use
 
 ```
-sgit pull
+subgit pull
 ```
 
-In the case you have defined a branch that do not exists on the `origin remote` then you will get an error when running `sgit pull`. No checks is done at the time you set your branch.
+In the case you have defined a branch that do not exists on the `origin remote` then you will get an error when running `subgit pull`. No checks is done at the time you set your branch.

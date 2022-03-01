@@ -1,12 +1,12 @@
-# sgit
+# Subgit
 
 The name came originally from "Submodules Git", or more commonly "Sub Git".
 
 The main purpose of this tool is to be used as a sync for cases to pull together a set of different Git repos into a deterministic directory tree. It is used to collect various individual parts into a whole.
 
-The main two advantages over other solutions is that when compared to the normal git submodules, you can more easily specify and avoid having to commit into your tree every single update that you want to have in your sgit checkout. In a submodule solution where you want to update and track the current and latest commit for the maste branch, you do not have to update your configuration file each time you make a new commit in the child repo. In the cases where you are pointing to tags and stable releases of a software, there is not much difference. When comparing to other tools that manipulates and pulls in each remote repos entire tree into your tree, this tool avoids that and dont care about that scenario. The only file you have to commit into a repo that you want sub repos to be exposed to is the `.sgit.yml` config file.
+The main two advantages over other solutions is that when compared to the normal git submodules, you can more easily specify and avoid having to commit into your tree every single update that you want to have in your subgit checkout. In a submodule solution where you want to update and track the current and latest commit for the maste branch, you do not have to update your configuration file each time you make a new commit in the child repo. In the cases where you are pointing to tags and stable releases of a software, there is not much difference. When comparing to other tools that manipulates and pulls in each remote repos entire tree into your tree, this tool avoids that and dont care about that scenario. The only file you have to commit into a repo that you want sub repos to be exposed to is the `.subgit.yml` config file.
 
-This tool has been primarly constructed to be a part inside a CI/CD solution where you want to in a build step, clone the repo that contains the `.sgit.yml` config file, clone out whatever branches or tags for all the child repos and then perform some action or build step or test or similar function while using all of the repos from one spot.
+This tool has been primarly constructed to be a part inside a CI/CD solution where you want to in a build step, clone the repo that contains the `.subgit.yml` config file, clone out whatever branches or tags for all the child repos and then perform some action or build step or test or similar function while using all of the repos from one spot.
 
 
 ## Usage
@@ -14,56 +14,58 @@ This tool has been primarly constructed to be a part inside a CI/CD solution whe
 
 ### !!WARNING!!
 
-Sgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Sgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
+Subgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Subgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
 
-In addition to `sgit`, you will also get an `git-sub` command, that when used as `git sub [...]` will be invoked properly. A neat way to expose this tool in a way that integrates with your Git workflow.
+In addition to `subgit`, you will also get an legacy alias `sgit` command.
+
+In the future there will also be support for integrating this tool directly into git by running `git sub [...]`. This makes it more transparent to use with any other git command.
 
 
 ### Quickstart
 
-Install the tool with `pip install py-sgit`. The tool requires python version >= 3.8.0
+Install the tool with `pip install subgit`. The tool requires `python>=3.8.0`, but we always recommend the latest major release as standard.
 
 Create a temporary folder where you want your sub repos to be located
 
 ```bash
-mkdir /tmp/sgit; cd /tmp/sgit
+mkdir /tmp/subgit; cd /tmp/subgit
 ```
 
-Initialize an empty `.sgit.yml` config file
+Initialize an empty `.subgit.yml` config file
 
 ```bash
-sgit init
+subgit init
 
 # or optionally you can specify the initial repo and clone url you want to be added with
-sgit init pykwalify git@github.com:Grokzen/pykwalify.git
+subgit init pykwalify git@github.com:Grokzen/pykwalify.git
 ```
 
-Inspect the content by looking inside the `.sgit.yml` config file
+Inspect the content by looking inside the `.subgit.yml` config file
 
 ```bash
-cat .sgit.yml
+cat .subgit.yml
 
 # This will show the default config in an empty config file
 repos: { }
 ```
 
-To add any number of git repos that you want to clone by manually editing the `.sgit.yml` configuration file.
+To add any number of git repos that you want to clone by manually editing the `.subgit.yml` configuration file.
 
-Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit pull` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
+Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `subgit pull` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
 
 ```bash
-sgit pull
+subgit pull
 
 # Or you can pull a specific repo from your config file.
-sgit pull pykwalify
+subgit pull pykwalify
 ```
 
-Sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
+Subgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
 You can view a summary of your current repo and config state with
 
 ```bash
-sgit status
+subgit status
 
  ** All repos **
 
@@ -79,16 +81,16 @@ sgit status
 
 ## Fetch changes in a repo
 
-If you want to `git fetch` all or a subset of git repos in your config then you can use the `sgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
+If you want to `git fetch` all or a subset of git repos in your config then you can use the `subgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
 
-Sgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
+Subgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
 
 ```bash
 # Fetch all repos in sequence
-sgit fetch
+subgit fetch
 
 # Fetch one specific repo
-sgit fetch pykwalify
+subgit fetch pykwalify
 ```
 
 
@@ -134,9 +136,9 @@ To get into a PDB debugger on any uncaught exceptions you can set the environmen
 
 We follow the method of always suporting the latest released major version of python and two major versions back. This gives us backwards compatibility for about 2-3 years depending on the release speed of new python versions.
 
-When a new major version is incorporated, tested and validated it works as expected and that dependencies is not broken, the update for new python version support should be released with the next major version of sgit. A major python version should never be dropped in a minor version update.
+When a new major version is incorporated, tested and validated it works as expected and that dependencies is not broken, the update for new python version support should be released with the next major version of subgit. A major python version should never be dropped in a minor version update.
 
-Python 2.7 is EOL and that version will not be supported at all moving forward.
+Python 2.7 is EOL and that version will not be supported moving forward.
 
 
 ## Project details
@@ -152,4 +154,4 @@ Python 2.7 is EOL and that version will not be supported at all moving forward.
 | License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
 | Copyright              | `Copyright (c) 2019-2021 Dynamist AB` |
 | git repo               | `git@github.com:dynamist/sgit.git` |
-| install stable         | `pip install py-sgit` |
+| install stable         | `pip install subgit` |
