@@ -29,12 +29,23 @@ class SubGit():
         self.answer_yes = answer_yes
 
         if not config_file_path:
-            self.subgit_config_file_name = ".subgit.yml"
-
+            # First attempt the old filename
+            self.subgit_config_file_name = ".sgit.yml"
             self.subgit_config_file_path = os.path.join(
                 os.getcwd(),
                 self.subgit_config_file_name,
             )
+
+            if os.path.exists(self.subgit_config_file_path):
+                log.warning("WARNING: using filename .sgit.yml will be deprecated in the future. Please convert it to .subgit.yml")
+
+            # If old file do not exists then fallback to new filename
+            if not os.path.exists(self.subgit_config_file_path):
+                self.subgit_config_file_name = ".subgit.yml"
+                self.subgit_config_file_path = os.path.join(
+                    os.getcwd(),
+                    self.subgit_config_file_name,
+                )
         else:
             self.subgit_config_file_name = os.path.basename(config_file_path)
             self.subgit_config_file_path = config_file_path
