@@ -1,6 +1,6 @@
 # Subgit
 
-The name came originally from "Submodules Git", or more commonly "Sub Git".
+The name came originally from "Submodule Git", or more commonly "Sub Git".
 
 The main purpose of this tool is to be used as a sync for cases to pull together a set of different Git repos into a deterministic directory tree. It is used to collect various individual parts into a whole.
 
@@ -62,34 +62,20 @@ subgit pull pykwalify
 
 Subgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
-You can view a summary of your current repo and config state with
-
-```bash
-subgit status
-
- ** All repos **
-
- - pykwalify
-    URL: git@github.com:grokzen/pykwalify.git
-    Tag: 1.7.0
-
- - redis
-    URL: git@github.com:grokzen/redis-py-cluster.git
-    Branch: master
-```
+You can view a summary of your current repo and config state by running `subgit status`
 
 
 ## Fetch changes in a repo
 
 If you want to `git fetch` all or a subset of git repos in your config then you can use the `subgit fetch` command. The benefit of doing a fetch is that you can fetch home all changes to a set of git repos but you do not have to update and move each repo to a new commit. In general git operations, it is always more safe to run `git fetch` before you do a checkout or `git pull` to update your local cloned repos. This allows you to inspect the changes incomming before commiting to pulling them.
 
-Subgit fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
+The fetch command supports the selection of either all repos or a subset of repos. The fetch command will never prompt the user asking if they want to do a update as fetch is considered a non-descrutive command.
 
 ```bash
 # Fetch all repos in sequence
 subgit fetch
 
-# Fetch one specific repo
+# Fetch one specified repo
 subgit fetch pykwalify
 ```
 
