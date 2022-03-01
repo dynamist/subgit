@@ -11,11 +11,13 @@ This tool has been primarly constructed to be a part inside a CI/CD solution whe
 
 ## Usage
 
+
 ### !!WARNING!!
 
 Sgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Sgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
 
 In addition to `sgit`, you will also get an `git-sub` command, that when used as `git sub [...]` will be invoked properly. A neat way to expose this tool in a way that integrates with your Git workflow.
+
 
 ### Quickstart
 
@@ -31,6 +33,9 @@ Initialize an empty `.sgit.yml` config file
 
 ```bash
 sgit init
+
+# or optionally you can specify the initial repo and clone url you want to be added with
+sgit init pykwalify git@github.com:Grokzen/pykwalify.git
 ```
 
 Inspect the content by looking inside the `.sgit.yml` config file
@@ -39,41 +44,27 @@ Inspect the content by looking inside the `.sgit.yml` config file
 cat .sgit.yml
 
 # This will show the default config in an empty config file
-
 repos: { }
 ```
 
-To add any number of git repos that you want to clone.
+To add any number of git repos that you want to clone by manually editing the `.sgit.yml` configuration file.
 
-You can optionally specify the target branch you want to clone by adding it at after the clone url. It will default to `master` branch as most git repos still use that. If you are using `main` as your default branch you need to specify that explicitly.
-
-```bash
-sgit repo add pykwalify git@github.com:Grokzen/pykwalify.git master
-```
-
-Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit update` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a inidial `git clone` before moving to your selected revision.
+Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `sgit pull` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
 
 ```bash
-sgit update
-```
+sgit pull
 
-Or you can update a specific repo from your config file.
-
-```bash
-sgit update pykwalify
+# Or you can pull a specific repo from your config file.
+sgit pull pykwalify
 ```
 
 Sgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
 
-You can view a summary of your current repo and config state by running
+You can view a summary of your current repo and config state with
 
 ```bash
-sgit list
-```
+sgit status
 
-Output
-
-```
  ** All repos **
 
  - pykwalify
@@ -84,45 +75,6 @@ Output
     URL: git@github.com:grokzen/redis-py-cluster.git
     Branch: master
 ```
-
-
-## Update a repos revision
-
-The command `sgit repo set` is used to manipulate existing repos in a config file.
-
-
-### Update/set a branch revision
-
-To move a repo to a new branch if you want for example to switch from `master` to `develop`.
-
-```bash
-sgit repo set pykwalify branch develop
-```
-
-Update the git repo and checkout the branch
-
-```bash
-sgit update pykwalify
-```
-
-There is much more extensive docuemtnation and examples for this feature in `docs/revision-branch.md`.
-
-
-### Update/set a tag revision
-
-To checkout a tag in a repo.
-
-```bash
-sgit repo set pykwalify tag 1.0.0
-```
-
-Update the git repo and checkout the tag
-
-```bash
-sgit update pykwalify
-```
-
-There is much more extensive documentation and examples for this feature in `docs/revision-tag.md`
 
 
 ## Fetch changes in a repo
@@ -150,6 +102,15 @@ Install all runtime dependencies, test dependencies, development dependencies an
 pip install -e ".[dev,test]"
 ```
 
+Create a new git branch from the `master` branch and commit all changes you want to contribute in there. After your work is complete submit a Merge Request on gitlab back to the `master` branch. Ask a collegue for review and approval of the changes. Also if you are not he maintainer or your reviewer is not the maintainer, it is always good to ping and ask that person as well before mergin big changes. Smaller changes or fixes do not require this, but it is always encouraged to do this for all MR:s.
+
+Requirement for a merge request
+
+- Pytests should always pass and be green
+- Any gitlab actions or PR specific tests/validation shold be green
+- No merge conflicts with master branch, if you have then you either merge master into your branch and resolve conflicts, or you rebase your branch ontop of master branch
+- Always do basic useability tests with most common commands as tests do not always show errors with everything
+ 
 
 ### Run unitest suite & Tox
 

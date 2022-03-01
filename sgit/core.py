@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+from subprocess import PIPE, Popen
 
 # sgit imports
 from sgit.constants import *
@@ -13,6 +14,7 @@ from sgit.exceptions import *
 
 # 3rd party imports
 import git
+import packaging
 from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
@@ -37,21 +39,24 @@ class Sgit():
             self.sgit_config_file_name = os.path.basename(config_file_path)
             self.sgit_config_file_path = config_file_path
 
-    def init_repo(self):
+    def init_repo(self, repo_name=None, repo_url=None):
         """
-        Algorithm:
-            - Check if .sgit.yml exists
-                - If exists:
-                    - Exit out from script
-                - If do not exists
-                    - Write new initial empty file to disk
+        If repo_name & repo_url is set to a string value, it will be attempted to be added to the initial
+        .sgit.yml config file as the first repo in your config. If these values is anything else the initial
+        config vill we written as empty.
         """
         if os.path.exists(self.sgit_config_file_path):
             log.error(f"File '{self.sgit_config_file_name}' already exists on disk")
             return 1
 
+        tmp_config = DEFAULT_REPO_DICT
+
+        if isinstance(repo_name, str) and isinstance(repo_url, str):
+            log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
+            tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
+
         with open(self.sgit_config_file_path, "w") as stream:
-            stream.write(DEFAULT_REPO_CONTENT)
+            self._dump_config_file(tmp_config)
             log.info(f'Successfully wrote new config file "{self.sgit_config_file_name}" to disk')
 
     def _get_config_file(self):
@@ -72,73 +77,97 @@ class Sgit():
         with open(self.sgit_config_file_path, "w") as stream:
             yaml.dump(config_data, stream, indent=2, default_flow_style=False)
 
-    def repo_list(self):
+    def repo_status(self):
         config = self._get_config_file()
         repos = config.get("repos", {})
-
-        print(f" ** All repos **")
 
         if not repos:
             print(f"  No repos found")
             return 1
 
         for repo_name, repo_data in repos.items():
-            print(f"")
-            print(f" - {repo_name}")
-            print(f"    URL: {repo_data.get('url')}")
+            print(f"{repo_name}")
+            print(f"  Url: {repo_data.get('url', 'NOT SET')}")
 
-            if "branch" in repo_data["revision"]:
-                print(f"    Branch: {repo_data.get('revision', {}).get('branch', None)}")
-            elif "tag" in repo_data["revision"]:
-                print(f"    Tag: {repo_data.get('revision', {}).get('tag', None)}")
+            repo_disk_path = os.path.join(os.getcwd(), repo_name)
+            print(f"  Disk path: {repo_disk_path}")
+
+            try:
+                repo = Repo(repo_disk_path)
+                cloned_to_disk = True
+            except git.exc.NoSuchPathError:
+                cloned_to_disk = False
+            
+            print(f"  Cloned: {'Yes' if cloned_to_disk else 'No'}")
+
+            if cloned_to_disk:
+                file_cwd = os.path.join(os.getcwd(), repo_name, ".git/FETCH_HEAD")
+
+                if os.path.exists(file_cwd):
+                    command = f"stat -c %y {file_cwd}"
+                    process = Popen(command, stdout=PIPE, stderr=None, shell=True)
+                    output, stderr = process.communicate()
+                    parsed_output = str(output).replace('\\n', '')
+                    print(f"  Last pull/fetch: {parsed_output}")
+                else:
+                    print(f"  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
             else:
-                raise SgitConfigException('No tag or "branch" key found inside "revision" block for repo "{name}')
+                print(f"  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
-    def repo_add(self, name, url, revision):
-        if not name or not url or not revision:
-            raise SgitConfigException(f'Name "{name}, url "{url}" or revision "{revision}" must be set')
+            if cloned_to_disk:
+                repo = Repo(repo_disk_path)
+                print(f"  Repo is dirty? {'Yes' if repo.is_dirty() else 'No'}")
+            else:
+                print(f"  Repo is dirty? ---")
 
-        config = self._get_config_file()
+            branch = repo_data['revision'].get('branch', '---')
+            commit = repo_data['revision'].get('commit', '---')
+            tag = repo_data['revision'].get('tag', '---')
 
-        if name in config.get("repos", []):
-            log.error(f'Repo with name "{name}" already exists in config file')
-            return 1
+            print(f"  Revision:")
 
-        # TODO: It is bad that each repo will default to a branch type and not a tag type
-        config["repos"][name] = {
-            "url": url,
-            "revision": {
-                "branch": revision,
-            },
-        }
+            print(f"    branch: {branch}")
+            if branch != "---":
+                if branch in repo.heads:
+                    commit_hash = str(repo.heads[branch].commit)
+                    commit_message = str(repo.heads[branch].commit.summary)
+                    has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                else:
+                    commit_hash = "Local branch not found"
+                    commit_message = "Local branch not found"
+                    has_new = "---"
 
-        self._dump_config_file(config)
+                print(f"      commit hash: {commit_hash}")
+                print(f"      commit message: '{commit_message}'")
+                print(f"      branch exists in origin? {branch in repo.remotes.origin.refs}")
+                print(f"      has newer commit in origin? {has_new}")
 
-        log.info(f'Successfully added new repo "{name}"')
+            print(f"    commit: {commit}")
+            if commit != "---":
+                print(f"FIXME: Not implemented yet")
 
-    def repo_set(self, name, attrib, value):
-        if not attrib or not value:
-            raise SgitConfigException(f'Attrib "{attrib}" or "{value}" must be set')
+            # Extract tag from inner value if that is set
+            #  {revision: {tag: {select: {value: foo}}}}
+            if isinstance(tag, dict):
+                tag = tag["select"]
 
-        config = self._get_config_file()
+                if isinstance(tag, dict):
+                    tag = tag["value"]
 
-        if name not in config.get("repos", []):
-            log.error(f'Repo with name "{name}" not found in config file')
-            return 1
+            print(f"    tag: {tag}")
 
-        if attrib == "tag":
-            del config["repos"][name]["revision"]["tag"]
-            config["repos"][name]["revision"]["tag"] = value
-            log.info(f'Set tag for repo "{name}" to -> "{value}"')
-        elif attrib == "branch":
-            del config["repos"][name]["revision"]["branch"]
-            config["repos"][name]["revision"]["branch"] = value
-            log.info(f'Set branch for repo "{name}" to -> "{value}"')
-        else:
-            log.error(f"Unsupported set attribute operation")
-            return 1
+            if tag != "---":
+                if tag in repo.tags:
+                    commit_hash = str(repo.tags[tag].commit)
+                    commit_summary = str(repo.tags[tag].commit.summary)
+                else:
+                    commit_hash = "Tag not found"
+                    commit_summary = "---"
 
-        self._dump_config_file(config)
+                print(f"      commit hash: {commit_hash}")
+                print(f"      commit message: '{commit_summary}'")
+
+            print(f"")
 
     def yes_no(self, question):
         print(question)
@@ -155,10 +184,11 @@ class Sgit():
         """
         Runs "git fetch" on one or more git repos.
 
-        To update all enabled repos send in None as value.
+        To fetch all enabled repos send in None as value.
 
-        To update a subset of repo names, send in them as a list of strings.
-        A empty list of items will update no repos.
+        To fetch a subset of repo names, send in them as a list of strings.
+        
+        A empty list of items will not fetch any repo.
         """
         log.debug(f"repo fetch input - {repos}")
 
@@ -183,20 +213,29 @@ class Sgit():
             log.error(f"No repos to fetch found")
             return 1
 
+        missing_any_repo = False
+
         for repo_name in repos_to_fetch:
             try:
                 repo_path = os.path.join(os.getcwd(), repo_name)
                 git_repo = Repo(repo_path)
-
-                log.info(f"Fetching git repo '{repo_name}'")
-                fetch_results = git_repo.remotes.origin.fetch()
-                log.info(f"Fetching completed for repo '{repo_name}'")
-
-                for fetch_result in fetch_results:
-                    log.info(f" - Fetch result: {fetch_result.name}")
             except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must update to clone it before fetching")
-                return 1
+                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
+                missing_any_repo = True
+
+        if missing_any_repo:
+            return 1
+
+        for repo_name in repos_to_fetch:
+            repo_path = os.path.join(os.getcwd(), repo_name)
+            git_repo = Repo(repo_path)
+
+            log.info(f"Fetching git repo '{repo_name}'")
+            fetch_results = git_repo.remotes.origin.fetch()
+            log.info(f"Fetching completed for repo '{repo_name}'")
+
+            for fetch_result in fetch_results:
+                log.info(f" - Fetch result: {fetch_result.name}")
 
         log.info(f"Fetching for all repos completed")
         return 0
@@ -213,23 +252,13 @@ class Sgit():
 
         return active_repos
 
-    def update(self, names):
+    def pull(self, names):
         """
-        To update all repos defined in the configuration send in names=None
+        To pull all repos defined in the configuration send in names=None
 
-        To update a subset of repos send in a list of strings names=["repo1", "repo2"]
-
-        Algorithm:
-            - If the folder do not exists
-                - clone the repo with Repo.clone_from
-                - Update the rev to specified rev
-            - If the folder do exists
-                - If working_tree has any changes in it
-                    - Throw error about working tree has changes
-                - If working tree is empty
-                    - Reset the repo to the specified rev
+        To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
         """
-        log.debug(f"Repo update - {names}")
+        log.debug(f"Repo pull - {names}")
 
         config = self._get_config_file()
 
@@ -245,10 +274,10 @@ class Sgit():
             repos = config.get("repos", [])
             repo_choices = ", ".join(active_repos)
 
-            answer = self.yes_no(f'Are you sure you want to update the following repos "{repo_choices}"')
+            answer = self.yes_no(f"Are you sure you want to 'git pull' the following repos '{repo_choices}'")
 
             if not answer:
-                log.warning(f"User aborted update step")
+                log.warning(f"User aborted pull step")
                 return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
@@ -297,154 +326,154 @@ class Sgit():
             log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
-        # Repos looks good to be updated. Run the update logic for each repo in sequence
+        # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
         for name in repos:
+            log.info("")
+
             repo_path = os.path.join(os.getcwd(), name)
-            revision = config["repos"][name]["revision"]
+            repo_config = config["repos"][name]
+            revision = repo_config["revision"]
 
             if not os.path.exists(repo_path):
                 clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
+                clone_url = repo_config.get("url", None)
+
+                if not clone_url:
+                    raise SgitConfigException(f"Missing required key 'url' on repo '{name}'")
 
                 try:
+                    # Cloning a repo w/o a specific commit/branch/tag it will clone out whatever default
+                    # branch or where the origin HEAD is pointing to. After we clone we can then move our
+                    # repo to the correct revision we want.
                     repo = Repo.clone_from(
                         config["repos"][name]["url"],
                         repo_path,
-                        branch=clone_rev,
                     )
                     log.info(f'Successfully cloned repo "{name}" from remote server')
-                except git.exc.GitCommandError as e:
-                    # We assume that retcode 128 means you try to clone into a bare repo and we must
-                    # attempt to clone it w/o a specific branch identifier.
-                    if e.status == 128:
-                        try:
-                            repo = Repo.clone_from(
-                                config["repos"][name]["url"],
-                                repo_path,
-                            )
-                            log.info(f'Successfully cloned into bare git repo "{name}" from remote server')
-                        except Exception as e:
-                            raise SgitException(f'Clone into bare git repo "{name}" failed, exception: {e}')
                 except Exception as e:
                     raise SgitException(f'Clone "{name}" failed, exception: {e}')
-            else:
-                log.debug(f"TODO: Parse for any changes...")
-                # TODO: Check that origin remote exists
 
-                repo = Repo(os.path.join(os.getcwd(), name))
+            log.debug(f"TODO: Parse for any changes...")
+            # TODO: Check that origin remote exists
 
-                g = Git(os.path.join(os.getcwd(), name))
+            repo = Repo(os.path.join(os.getcwd(), name))
 
-                # Fetch all changes from upstream git repo
-                repo.remotes.origin.fetch()
+            g = Git(os.path.join(os.getcwd(), name))
 
-                # How to handle the repo when a branch is specified
-                if "branch" in revision:
-                    log.debug(f"Handling branch update case")
+            # Fetch all changes from upstream git repo
+            repo.remotes.origin.fetch()
 
-                    # Extract the sub tag data
-                    branch_revision = revision["branch"]
+            # How to handle the repo when a branch is specified
+            if "branch" in revision:
+                log.debug(f"Handling branch pull case")
 
-                    # Ensure the local version of the branch exists and points to the origin ref for that branch
-                    repo.create_head(f"{branch_revision}", f"origin/{branch_revision}")
+                # Extract the sub tag data
+                branch_revision = revision["branch"]
 
-                    # Checkout the selected revision
-                    # TODO: This only support branches for now
-                    repo.heads[branch_revision].checkout()
+                # Ensure the local version of the branch exists and points to the origin ref for that branch
+                repo.create_head(f"{branch_revision}", f"origin/{branch_revision}")
 
-                    log.info(f'Successfully update repo "{name}" to latest commit on branch "{branch_revision}"')
-                    log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
-                elif "tag" in revision:
-                    #
-                    # Parse and extract out all relevant config options and determine if they are nested
-                    # dicts or single values. The values will later be used as input into each operation.
-                    #
-                    tag_config = revision["tag"]
+                # Checkout the selected revision
+                # TODO: This only support branches for now
+                repo.heads[branch_revision].checkout()
 
-                    if isinstance(tag_config, str):
-                        # All options should be set to default'
-                        filter_config = []
+                log.info(f'Successfully pull repo "{name}" to latest commit on branch "{branch_revision}"')
+                log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
+            elif "tag" in revision:
+                #
+                # Parse and extract out all relevant config options and determine if they are nested
+                # dicts or single values. The values will later be used as input into each operation.
+                #
+                tag_config = revision["tag"]
+
+                if isinstance(tag_config, str):
+                    # All options should be set to default'
+                    filter_config = []
+                    order_algorithm = OrderAlgorithms.SEMVER
+                    order_config = None
+                    select_config = tag_config
+                    select_method = SelectionMethods.SEMVER
+                elif isinstance(tag_config, dict):
+                    # If "filter" key is not specified then we should not filter anything and keep all values
+                    filter_config = tag_config.get("filter", [])
+
+                    # If we do not have a list, convert it internally first
+                    if isinstance(filter_config, str):
+                        filter_config = [filter_config]
+
+                    if not isinstance(filter_config, list):
+                        raise SgitConfigException(f"filter option must be a list of items or a single string")
+
+                    order_config = tag_config.get("order", None)
+                    if order_config is None:
                         order_algorithm = OrderAlgorithms.SEMVER
-                        order_config = None
-                        select_config = tag_config
-                        select_method = SelectionMethods.SEMVER
-                    elif isinstance(tag_config, dict):
-                        # If "filter" key is not specified then we should not filter anything and keep all values
-                        filter_config = tag_config.get("filter", [])
-
-                        # If we do not have a list, convert it internally first
-                        if isinstance(filter_config, str):
-                            filter_config = [filter_config]
-
-                        if not isinstance(filter_config, list):
-                            raise SgitConfigException(f"filter option must be a list of items or a single string")
-
-                        order_config = tag_config.get("order", None)
-                        if order_config is None:
-                            order_algorithm = OrderAlgorithms.SEMVER
-                        else:
-                            order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
-
-                            if order_algorithm is None:
-                                raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
-
-                        select_config = tag_config.get("select", None)
-                        select_method = None
-                        if select_config is None:
-                            raise SgitConfigException(f"select key is required in all tag revisions")
-
-                        # We have sub options to extract out
-                        if isinstance(select_config, dict):
-                            select_config = select_config["value"]
-                            select_method_value = select_config["method"]
-
-                            select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
-
-                            if select_method is None:
-                                raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
-                        else:
-                            select_method = SelectionMethods.SEMVER
                     else:
-                        raise SgitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
+                        order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
 
-                    log.debug(f"{filter_config}")
-                    log.debug(f"{order_config}")
-                    log.debug(f"{order_algorithm}")
-                    log.debug(f"{select_config}")
-                    log.debug(f"{select_method}")
+                        if order_algorithm is None:
+                            raise SgitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
 
-                    # Main tag parsing logic
+                    select_config = tag_config.get("select", None)
+                    select_method = None
+                    if select_config is None:
+                        raise SgitConfigException(f"select key is required in all tag revisions")
 
-                    git_repo_tags = [
-                        str(tag)
-                        for tag in repo.tags
-                    ]
-                    log.debug(f"Raw git tags from git repo {git_repo_tags}")
+                    log.debug(f"select_config: {select_config}")
 
-                    filter_output = self._filter(git_repo_tags, filter_config)
+                    # We have sub options to extract out
+                    if isinstance(select_config, dict):
+                        select_method_value = select_config["method"]
+                        select_config = select_config["value"]
+                        
+                        log.debug(f"select_method: {select_method_value}")
 
-                    # # FIXME: If we choose time as sorting method we must convert the data to a new format
-                    # #        that the order algorithm allows.
-                    # if order_algorithm == OrderAlgorithms.TIME:
-                    #     pass
+                        select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
 
-                    order_output = self._order(filter_output, order_algorithm)
-                    select_output = self._select(order_output, select_config, select_method)
-                    log.debug(select_output)
+                        if select_method is None:
+                            raise SgitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
+                    else:
+                        select_method = SelectionMethods.SEMVER
+                else:
+                    raise SgitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
 
-                    if not select_output:
-                        raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
+                log.debug(f"{filter_config}")
+                log.debug(f"{order_config}")
+                log.debug(f"{order_algorithm}")
+                log.debug(f"{select_config}")
+                log.debug(f"{select_method}")
 
-                    log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
+                # Main tag parsing logic
 
-                    # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
-                    # inside the git repo, we will get sub exceptions raised by git module.
-                    g.checkout(select_output)
+                git_repo_tags = [
+                    tag for tag in repo.tags
+                ]
+                log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
-                    log.info(f"Checked out tag '{select_output}' for repo '{name}'")
-                    log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
-                    log.info(f"Current commit summary on HEAD in git repo '{name}': ")
-                    log.info(f"  {str(repo.head.commit.summary)}")
+                filter_output = self._filter(git_repo_tags, filter_config)
+
+                # # FIXME: If we choose time as sorting method we must convert the data to a new format
+                # #        that the order algorithm allows.
+                # if order_algorithm == OrderAlgorithms.TIME:
+                #     pass
+
+                order_output = self._order(filter_output, order_algorithm)
+                select_output = self._select(order_output, select_config, select_method)
+                log.debug(select_output)
+
+                if not select_output:
+                    raise SgitRepoException(f"No git tag could be parsed out with the current repo configuration")
+
+                log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
+
+                # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
+                # inside the git repo, we will get sub exceptions raised by git module.
+                g.checkout(select_output)
+
+                log.info(f"Checked out tag '{select_output}' for repo '{name}'")
+                log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
+                log.info(f"Current commit summary on HEAD in git repo '{name}': ")
+                log.info(f"  {str(repo.head.commit.summary)}")
 
     def _filter(self, sequence, regex_list):
         """
@@ -482,9 +511,9 @@ class Sgit():
                 if filter_regex.strip() == "":
                     raise SgitConfigException(f"ERROR: Empty regex filter string is not allowed")
 
-                log.debug(f"Filtering item '{item}' against regex '{filter_regex}")
+                log.debug(f"Filtering item '{str(item)}' against regex '{filter_regex}")
 
-                match_result = re.match(filter_regex, item)
+                match_result = re.match(filter_regex, str(item))
 
                 if match_result:
                     log.debug(f"Filter match result hit: {match_result}")
@@ -502,7 +531,7 @@ class Sgit():
 
         return filtered_sequence
 
-    def _order(self, sequence, method):
+    def _order(self, sequence, order_method):
         """
         Given a sequence of git objects, order them based on what ordering algorithm selected.
 
@@ -513,25 +542,27 @@ class Sgit():
 
         Supports OrderAlgorithm methods: ALPHABETICAL, TIME, SEMVER
 
+        If unsupported order_method is specified, it will thro SgitConfigException
+
         Returns a new list with the sorted sequence of items
         """
         ordered_sequence = []
 
-        if method == OrderAlgorithms.SEMVER:
+        if order_method == OrderAlgorithms.SEMVER:
             log.debug(f"Ordering sequence of items by PEP440 SEMVER logic")
             log.debug(sequence)
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
-            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(x)))
-        elif method == OrderAlgorithms.TIME:
+            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(str(x))))
+        elif order_method == OrderAlgorithms.TIME:
             log.debug(f"Ordering sequence of items by TIME they was created, input:")
             log.debug(sequence)
 
             # When sorting by time the latest item in the sequence with the highest or most recent time
             # will be on index[0] in the returned sequence
             ordered_sequence = list(sorted(sequence, key=lambda t: t[1]))
-        elif method == OrderAlgorithms.ALPHABETICAL:
+        elif order_method == OrderAlgorithms.ALPHABETICAL:
             log.debug(f"Order sequence of items by ALPHABETICAL string order")
             log.debug(sequence)
 
@@ -549,9 +580,9 @@ class Sgit():
         Given a sequence of objects, perform the selection based on the selection_method and the
         logic that it implements.
 
-        Supports: SEMVER, EXACT
+        Supported selection methods: SEMVER, EXACT
 
-        Defaults to SEMVER logic
+        If unsupported selection_method is specified, it will throw SgitConfigException
 
         SEMVER: It will run you selection against the sequence of items and with a library supporting
                 PEP440 semver comparison logic. Important note here is that it will take the highest
@@ -576,24 +607,30 @@ class Sgit():
             elif selection_query == "first":
                 return sequence[0]
             else:
-                spec = SpecifierSet(selection_query)
+                log.debug(f"Selection query")
 
-                filtered_versions = list(
-                    spec.filter(
-                        sequence,
+                try:
+                    spec = SpecifierSet(selection_query)
+
+                    filtered_versions = list(
+                        spec.filter([str(item) for item in sequence]),
                     )
-                )
 
-                log.debug(f"filtered_versions")
-                log.debug(filtered_versions)
+                    log.debug(f"filtered_versions")
+                    log.debug(filtered_versions)
 
-                return filtered_versions[-1]
-        elif selection_method == SelectionMethods.EXACT:
+                    return filtered_versions[-1]
+                except packaging.specifiers.InvalidSpecifier:
+                    log.warning(f"WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value")
+                    selection_method = SelectionMethods.EXACT
+        
+        if selection_method == SelectionMethods.EXACT:
             for item in sequence:
-                if item == selection_query:
+                if str(item) == selection_query:
                     return item
 
             # Query not found in sequence, return None
             return None
-        else:
+        
+        if selection_method not in SelectionMethods.__members__:
             raise SgitConfigException(f"Unsupported select algorithm selected")

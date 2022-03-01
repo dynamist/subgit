@@ -67,7 +67,7 @@ repos:
 
 ## Examples
 
-Basic example. This example will not filter out any items, it will order them by semver and the selection want the latest tag based on semver comparison. This will result in `1.0.0` as the output when doing `sgit update`
+Basic example. This example will not filter out any items, it will order them by semver and the selection want the latest tag based on semver comparison. This will result in `1.0.0` as the output when doing `sgit pull`
 
 ```yaml
 # .sgit.yml

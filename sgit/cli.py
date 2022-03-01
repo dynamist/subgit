@@ -16,59 +16,14 @@ Usage:
     sgit <command> [options] [<args> ...]
 
 Commands:
-    init          Initialize a new sgit repo
-    list          Show the config for all repos in the config file
-    repo          Commands to manipulate .sgit.yml
-    update        Update a sub repo
-    fetch         Runs git fetch on all repos
+    fetch    Fetch one or all Git repos
+    init     Initialize a new sgit repo
+    pull     Update one or all Git repos
+    status   Show status of each configured repo
 
 Options:
     --help          Show this help message and exit
     --version       Display the version number and exit
-"""
-
-
-sub_repo_args = """
-Usage:
-    sgit repo add <name> <url> [<rev>] [options]
-    sgit repo set <name> branch <branch> [options]
-    sgit repo set <name> tag <tag> [options]
-
-Options:
-    <rev>               Revision to set for a given repo [default: master]
-    -y, --yes           Answers yes to all questions (use with caution)
-    -h, --help          Show this help message and exit
-"""
-
-
-sub_update_args = """
-Usage:
-    sgit update [<repo> ...] [options]
-
-Options:
-    <repo>      Name of repo to update
-    -y, --yes   Answers yes to all questions (use with caution)
-    -h, --help  Show this help message and exit
-"""
-
-
-sub_list_args = """
-Usage:
-    sgit list [options]
-
-Options:
-    -y, --yes   Answers yes to all questions (use with caution)
-    -h, --help  Show this help message and exit
-"""
-
-
-sub_init_args = """
-Usage:
-    sgit init [options]
-
-Options:
-    -y, --yes   Answers yes to all questions (use with caution)
-    -h, --help  Show this help message and exit
 """
 
 
@@ -77,8 +32,39 @@ Usage:
     sgit fetch [<repo> ...] [options]
 
 Options:
-    -y, --yes       Answers yes to all questions (use with caution)
-    -h, --help  Show this help message and exit
+    -y, --yes    Answers yes to all questions (use with caution)
+    -h, --help   Show this help message and exit
+"""
+
+
+sub_init_args = """
+Usage:
+    sgit init [<name> <url>] [options]
+
+Options:
+    -y, --yes    Answers yes to all questions (use with caution)
+    -h, --help   Show this help message and exit
+"""
+
+
+sub_pull_args = """
+Usage:
+    sgit pull [<repo> ...] [options]
+
+Options:
+    <repo>       Name of repo to pull
+    -y, --yes    Answers yes to all questions (use with caution)
+    -h, --help   Show this help message and exit
+"""
+
+
+sub_status_args = """
+Usage:
+    sgit status [options]
+
+Options:
+    -y, --yes    Answers yes to all questions (use with caution)
+    -h, --help   Show this help message and exit
 """
 
 
@@ -107,16 +93,14 @@ def parse_cli():
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
-    if cli_args["<command>"] == "repo":
-        sub_args = docopt(sub_repo_args, argv=argv)
-    elif cli_args["<command>"] == "update":
-        sub_args = docopt(sub_update_args, argv=argv)
+    if cli_args["<command>"] == "fetch":
+        sub_args = docopt(sub_fetch_args, argv=argv)
     elif cli_args["<command>"] == "init":
         sub_args = docopt(sub_init_args, argv=argv)
-    elif cli_args["<command>"] == "list":
-        sub_args = docopt(sub_list_args, argv=argv)
-    elif cli_args["<command>"] == "fetch":
-        sub_args = docopt(sub_fetch_args, argv=argv)
+    elif cli_args["<command>"] == "pull":
+        sub_args = docopt(sub_pull_args, argv=argv)
+    elif cli_args["<command>"] == "status":
+        sub_args = docopt(sub_status_args, argv=argv)
     else:
         extras(
             True,
@@ -148,46 +132,26 @@ def run(cli_args, sub_args):
 
     core = Sgit(answer_yes=sub_args["--yes"])
 
-    if cli_args["<command>"] == "repo":
-        if sub_args["add"]:
-            retcode = core.repo_add(
-                sub_args["<name>"],
-                sub_args["<url>"],
-                sub_args["<rev>"] or "master",
-            )
-        elif sub_args["set"]:
-            if sub_args["tag"]:
-                retcode = core.repo_set(
-                    sub_args["<name>"],
-                    "tag",
-                    sub_args["<tag>"]
-                )
-            elif sub_args["branch"]:
-                retcode = core.repo_set(
-                    sub_args["<name>"],
-                    "branch",
-                    sub_args["<branch>"],
-                )
-            else:
-                retcode = 1
-
-    if cli_args["<command>"] == "list":
-        retcode = core.repo_list()
-
-    if cli_args["<command>"] == "update":
-        repos = sub_args["<repo>"]
-        repos = repos or None
-
-        retcode = core.update(repos)
-
-    if cli_args["<command>"] == "init":
-        retcode = core.init_repo()
-
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
         repos = repos or None
 
         retcode = core.fetch(repos)
+
+    if cli_args["<command>"] == "init":
+        repo_name = sub_args["<name>"]
+        repo_url = sub_args["<url>"]
+
+        retcode = core.init_repo(repo_name, repo_url)
+
+    if cli_args["<command>"] == "pull":
+        repos = sub_args["<repo>"]
+        repos = repos or None
+
+        retcode = core.pull(repos)
+
+    if cli_args["<command>"] == "status":
+        retcode = core.repo_status()
 
     return retcode
 
