@@ -31,7 +31,9 @@ Create a temporary folder where you want your sub repos to be located
 mkdir /tmp/subgit; cd /tmp/subgit
 ```
 
-Initialize an empty `.subgit.yml` config file
+Initialize an empty `.subgit.yml` config file.
+
+For compatibility we will support either naming the config file `.subgit.yml` and `.sgit.yml` until *1.0.0* release and at that time this support will be dropped.
 
 ```bash
 subgit init
