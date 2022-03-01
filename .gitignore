@@ -126,6 +126,8 @@ dmypy.json
 
 *.sgit.yaml*
 *.sgit.yml*
+*.subgit.yaml*
+*.subgit.yml*
 
 # Commonly used example git repos from documentation
 pykwalify/

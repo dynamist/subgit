@@ -4,7 +4,7 @@ with open("README.md") as f:
     readme = f.read()
 
 setup(
-    name="py-sgit",
+    name="subgit",
     version="0.5.0",
     description="CLI tool ",
     long_description=readme,
@@ -19,8 +19,8 @@ setup(
     entry_points={
         "console_scripts": [
             "sgit = sgit.cli:cli_entrypoint",
-            "git-sub = sgit.cli:cli_entrypoint",
-        ]
+            "subgit = sgit.cli:cli_entrypoint",
+        ],
     },
     install_requires=[
         "docopt>=0.6.2",
