@@ -18,7 +18,7 @@ setup(
     url="http://github.com/dynamist/sgit",
     entry_points={
         "console_scripts": [
-            "git-sub = sgit.cli:cli_entrypoint",
+            "git-sub = subgit.cli:cli_entrypoint",
             "sgit = subgit.cli:cli_entrypoint",
             "subgit = subgit.cli:cli_entrypoint",
         ],
