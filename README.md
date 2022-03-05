@@ -129,17 +129,57 @@ When a new major version is incorporated, tested and validated it works as expec
 Python 2.7 is EOL and that version will not be supported moving forward.
 
 
+## Build and publish a release to pypi
+
+Ensure that you have updated all version tags to the desired version number for the next release. Either update the minor release or update the major release depending on the changes introduced within this release. Note that all support documents like releasenotes and other help documents must be completed and updated before this these build steps should be done. Once the build is uploaded to pypi it can't be reuploaded with a new build without bumping the version number again.
+
+Create a fresh virtualenv. Install required build dependencies. Build the pckages
+
+```bash
+python -m pip install --upgrade setuptools wheel twine
+
+# Remove the old dist/ folder to avoid collisions and reuploading existing releases
+rm -r dist/
+
+# Generate the source build and wheels build
+python setup.py sdist bdist_wheel
+````
+
+Test and verify package can be installed locally within the virtualenv and that basic usage test cases works as expected and that simple cli oppreations like `subgit --help` and `subgit pull` and `subgit status` etc works as expected.
+
+Next step is to test upload the release to the test-pypi server to ensure that the package will be accepted by pypi official server. Note that this step requires you to have a valid test-pypi account over at https://test.pypi.org/ and that you have the permissions to manage and upload the subgit shared project. If you do not have these things setup, please talk to the repo maintaner to setup this.
+
+To upload the previous built dist packages to pypi run
+
+```bash
+python -m twine upload --repository testpypi dist/*
+````
+
+Input your username + password to the prompt. Note that username is case sensetive.
+
+Validate your release was uploaded correct by visiting https://test.pypi.org/manage/project/subgit/ and look for the version number you uploaded. If this looks good and works then continue to upload the final release to regular pypi.org.
+
+```bash
+# Upload to pypi.org
+python -m twine upload dist/*
+````
+
+Input your username + password but this time for your account on pypi.org and NOT test.pypi.org. These are two separate accounts. Same here, validate the build by going to https://pypi.org/manage/project/subgit/ and once these files is uploaded they are published and can't be rebuilt/replaced w/o making a post fix release. Read up onn python.org own release documentation for those steps.
+
+Finally you should create the git tag for the git commit that you built. Run `git tag <semver-version>` to make the tag and push them with `git push --tags` to publish the tag. Rembmer to only do tags on the master branch.
+
+
 ## Project details
 
 |   |   |
 |---|---|
 | python support         | 3.8, 3.9, 3.10 |
-| Source code            | https://github.com/dynamist/sgit |
-| Changelog              | https://github.com/dynamist/sgit/blob/master/CHANGELOG.md |
-| Issues                 | https://github.com/dynamist/sgit/issues |
-| Projects page          | https://github.com/dynamist/sgit/projects/1
-| pypi                   | https://pypi.python.org/pypi/sgit/ |
-| License                | `Apache-2.0` https://github.com/dynamist/sgit/blob/master/LICENSE |
+| Source code            | https://github.com/dynamist/subgit |
+| Changelog              | https://github.com/dynamist/subgit/blob/master/CHANGELOG.md |
+| Issues                 | https://github.com/dynamist/subgit/issues |
+| Projects page          | https://github.com/dynamist/subgit/projects/1
+| pypi                   | https://pypi.python.org/pypi/subgit/ |
+| License                | `Apache-2.0` https://github.com/dynamist/subgit/blob/master/LICENSE |
 | Copyright              | `Copyright (c) 2019-2021 Dynamist AB` |
-| git repo               | `git@github.com:dynamist/sgit.git` |
+| git repo               | `git@github.com:dynamist/subgit.git` |
 | install stable         | `pip install subgit` |
