@@ -75,7 +75,7 @@ class SubGit():
             log.error("No .subgit.yml file exists in current CWD")
             sys.exit(1)
 
-        with open(self.subgit_config_file_path, "r") as stream:
+        with open(self.subgit_config_file_path, "r") as stream: 
             return yaml.load(stream, Loader=yaml.Loader)
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
@@ -486,6 +486,73 @@ class SubGit():
                 log.info(f"Current commit summary on HEAD in git repo '{name}': ")
                 log.info(f"  {str(repo.head.commit.summary)}")
 
+    def delete_local_repo(self, repo_names=None):
+        """
+        Method takes zero or one repo name as argument.
+
+        If given zero names: 'subgit delete' will delete the LOCAL copy of all repos specified inside the .subgit.yaml file
+
+        If given one name: 'subgit delete' will delete the LOCAL copy of specified repo
+
+        Notes:
+            subgit delete: should return 'are you sure you want to delete all local repos?' []
+                yes: deletes all local repos currently in conf file
+                no: exit
+            subgit delete <invalid repo>: should return 'repo not in config file, exit' []
+            subgit delete <valid repo>: should return 'are you sure you want to delete local repo?' []
+                yes: deletes specified repo(s)
+                no: exit
+
+            If any repo(s) specified is dirty, program will leave it/them alone and proceed with the clean ones
+            
+        """
+        # log.debug(f'Deleting repo - {repo_name}')
+
+        config = self._get_config_file()
+
+        active_repos = self._get_active_repos(config)
+
+        dirty_repos = []
+
+        print(active_repos) # debug
+
+        if repo_names is None:
+            active_repos = config.get('repos', [])
+
+            repo_choices = ", ".join(active_repos)
+
+            answer = self.yes_no(f"Are you sure you want to delete the following sub repos '{repo_choices}'")
+
+            if answer:
+                for name in active_repos:
+                    path_to_repo = os.path.join(os.getcwd(), name)
+                    
+                    if os.path.exists(path_to_repo):
+                        current_repo = Repo(path_to_repo)
+
+                        if current_repo.is_dirty():
+                            dirty_repos.append(name)
+
+                    else:
+                        log.warning(f"Local copy of '{name}' does not exist on disk")
+                if dirty_repos:
+                    log.warning(f"Some repos have uncommited changes. Commit changes or add '--force' flag to force deletion on:\n")
+                    log.warning(f"      {', '.join(dirty_repos)}\n")
+                    return 1
+            else:
+                log.warning(f"User aborted deletion")
+                return 1
+        elif isinstance(repo_names, list):
+            for name in repo_names:
+                if name in active_repos:
+                    print(f'{name} in conf file') # debug
+                else:
+                    print(f'{name} not in conf file') # debug
+        else:
+            print(f'Something went wrong') # debug
+        
+
+       
     def _filter(self, sequence, regex_list):
         """
         Given a sequence of git objects, clean them against all regex items in the provided regex_list.

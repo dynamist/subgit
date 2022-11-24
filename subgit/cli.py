@@ -20,6 +20,7 @@ Commands:
     init     Initialize a new subgit repo
     pull     Update one or all Git repos
     status   Show status of each configured repo
+    delete   Delete one or all local Git repos
 
 Options:
     --help          Show this help message and exit
@@ -68,6 +69,17 @@ Options:
 """
 
 
+sub_delete_args = """
+Usage:
+    subgit delete [<repo> ...] [options]
+
+Options:
+    -y, --yes    Answers yes to all questions (use with caution)
+    --force      Forces deletion of repos(s)
+    -h, --help   Show this help message and exit
+"""
+
+
 def parse_cli():
     """Parse the CLI arguments and options."""
     import subgit
@@ -101,6 +113,8 @@ def parse_cli():
         sub_args = docopt(sub_pull_args, argv=argv)
     elif cli_args["<command>"] == "status":
         sub_args = docopt(sub_status_args, argv=argv)
+    elif cli_args["<command>"] == "delete":
+        sub_args = docopt(sub_delete_args, argv=argv)
     else:
         extras(
             True,
@@ -152,6 +166,12 @@ def run(cli_args, sub_args):
 
     if cli_args["<command>"] == "status":
         retcode = core.repo_status()
+
+    if cli_args["<command>"] == "delete":
+        repos = sub_args["<repo>"]
+        repos = repos or None
+
+        retcode = core.delete_local_repo(repos)
 
     return retcode
 
