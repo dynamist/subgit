@@ -5,13 +5,14 @@ import logging
 import os
 import re
 import sys
+import shutil
 from subprocess import PIPE, Popen
 
 # subgit imports
 from subgit.constants import *
 from subgit.enums import *
 from subgit.exceptions import *
-
+    
 # 3rd party imports
 import git
 import packaging
@@ -25,8 +26,9 @@ log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(self, config_file_path=None, answer_yes=False):
+    def __init__(self, config_file_path=None, answer_yes=False, forced=False):
         self.answer_yes = answer_yes
+        self.forced = forced
 
         if not config_file_path:
             # First attempt the old filename
@@ -514,44 +516,85 @@ class SubGit():
 
         dirty_repos = []
 
-        print(active_repos) # debug
-
+        # If no names are specified in the command
         if repo_names is None:
-            active_repos = config.get('repos', [])
+            if not self.forced:
+                active_repos = config.get('repos', [])
 
-            repo_choices = ", ".join(active_repos)
+                repo_choices = ", ".join(active_repos)
 
+                answer = self.yes_no(f"Are you sure you want to delete the following sub repos '{repo_choices}'")
+
+
+
+                if answer:
+        
+                    self.repo_deletion(active_repos=active_repos)
+
+                else:
+                    log.warning(f"User aborted deletion")
+                    return 1
+            else:
+                print('True')
+        elif isinstance(repo_names, list): # If at least one name was specified
+
+            repo_choices = ", ".join(repo_names)
+            
             answer = self.yes_no(f"Are you sure you want to delete the following sub repos '{repo_choices}'")
-
+            
             if answer:
-                for name in active_repos:
-                    path_to_repo = os.path.join(os.getcwd(), name)
+                
+                self.repo_deletion(active_repos, repo_names)
+        else:
+            print(f'Something went wrong') # debug
+
+    def repo_deletion(self, active_repos, repos=None):
+        """
+        Helper method that recieves a list of repos to delete and takes care of the logic
+        """
+        dirty_repos = [] # This check is just stand-in for future fetch check | This method will not check for dirty repos...
+        if not repos:
+            repos = active_repos
+        
+        for name in repos:
+            if name in active_repos:
+                        
+                path_to_repo = os.path.join(os.getcwd(), name)
+                
+                if os.path.exists(path_to_repo) and self.is_valid_repo(path_to_repo):
                     
-                    if os.path.exists(path_to_repo):
-                        current_repo = Repo(path_to_repo)
-
-                        if current_repo.is_dirty():
-                            dirty_repos.append(name)
-
+                    current_repo = Repo(path_to_repo)
+                    
+                    if self.is_repo_ok(current_repo):
+                        shutil.rmtree(path_to_repo)
+                        log.info(f'Successfully deleted local repo: {name}')
                     else:
-                        log.warning(f"Local copy of '{name}' does not exist on disk")
+                        dirty_repos.append(name)
+                else:
+                    log.warning(f"Either local copy of '{name}' does not exist on disk, or is not a valid git repository")
+
                 if dirty_repos:
                     log.warning(f"Some repos have uncommited changes. Commit changes or add '--force' flag to force deletion on:\n")
                     log.warning(f"      {', '.join(dirty_repos)}\n")
-                    return 1
-            else:
-                log.warning(f"User aborted deletion")
-                return 1
-        elif isinstance(repo_names, list):
-            for name in repo_names:
-                if name in active_repos:
-                    print(f'{name} in conf file') # debug
-                else:
-                    print(f'{name} not in conf file') # debug
-        else:
-            print(f'Something went wrong') # debug
-        
 
+            else:
+                print(f'{name} not in conf file') # debug
+
+    def is_repo_ok(self, name):
+        is_ok = False
+        for remote in name.remotes:
+            if str(remote) == 'origin':
+                remote.fetch()
+                print('Fetched')
+        print('DEBUG: ' + str(name))
+        return True
+
+    def is_valid_repo(self, path):
+        try:
+            valid_repo = Repo(path)
+            return True
+        except git.exc.InvalidGitRepositoryError:
+            return False
        
     def _filter(self, sequence, regex_list):
         """
