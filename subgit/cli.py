@@ -75,7 +75,6 @@ Usage:
 
 Options:
     -y, --yes    Answers yes to all questions (use with caution)
-    --force      Forces deletion of repos(s)
     -h, --help   Show this help message and exit
 """
 
