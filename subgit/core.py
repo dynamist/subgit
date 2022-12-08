@@ -567,7 +567,7 @@ class SubGit():
 
         if not dirty_repos:
             for repo in good_repos:
-                if not path in path_no_exist:
+                if path not in path_no_exist:
                     shutil.rmtree(repo)
                     log.info(f'Successfully removed repo: {os.path.basename(repo)}')
 
