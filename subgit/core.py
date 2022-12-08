@@ -22,14 +22,12 @@ from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
 
-
 log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(self, config_file_path=None, answer_yes=False, forced=False):
+    def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
-        self.forced = forced
 
         if not config_file_path:
             # First attempt the old filename
@@ -532,6 +530,8 @@ class SubGit():
 
         repo_paths = []
 
+        path_no_exist = []
+
         good_repos = []
 
         for name in repos:
@@ -546,8 +546,9 @@ class SubGit():
         for path in repo_paths:
 
             if not os.path.exists(path):
-                log.warning(f'Path to repo does not exist: {os.path.basename(path)} | Add option --force if you wish to proceed with clean repos')
-                return 1
+                log.warning(f'Path to repo does not exist: {os.path.basename(path)} | Skipping {os.path.basename(path)}')
+                path_no_exist.append(path)
+                repo_paths.remove(path)
 
         for path in repo_paths:
 
@@ -566,10 +567,10 @@ class SubGit():
 
         if not dirty_repos:
             for repo in good_repos:
-                shutil.rmtree(repo)
-                log.info(f'Successfully removed repo: {os.path.basename(repo)}')
+                if not path in path_no_exist:
+                    shutil.rmtree(repo)
+                    log.info(f'Successfully removed repo: {os.path.basename(repo)}')
 
-    # @pysnooper.snoop()
     def check_remote(self, repo, base_name):
         """
         Takes repo object and name of directory to delete
@@ -580,7 +581,7 @@ class SubGit():
             for branch in repo.branches:
                 if remote.refs[str(branch)].commit != repo.heads[str(branch)].commit or repo.is_dirty(untracked_files=True):
                     is_diff = True
-                    log.warning(f"FATAL: '{base_name}' has some diff(s) in the remote that needs be taken care of before deletion.")
+                    log.warning(f"FATAL: '{base_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
 
         return is_diff
 
