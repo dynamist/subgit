@@ -20,7 +20,7 @@ Commands:
     init     Initialize a new subgit repo
     pull     Update one or all Git repos
     status   Show status of each configured repo
-    delete   Delete one or all local Git repos
+    delete   Delete one or more local Git repos
 
 Options:
     --help          Show this help message and exit
@@ -170,7 +170,7 @@ def run(cli_args, sub_args):
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.delete_local_repo(repos)
+        retcode = core.delete(repos)
 
     return retcode
 
