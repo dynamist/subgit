@@ -22,6 +22,7 @@ from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
+import pysnooper
 
 log = logging.getLogger(__name__)
 
@@ -512,6 +513,7 @@ class SubGit():
         if answer:
             self._delete_repo(active_repos, repo_names)
 
+    @pysnooper.snoop()
     def _delete_repo(self, active_repos, repos=None):
         """
         Helper method that recieves a list of repos to delete and takes care of the logic
@@ -561,7 +563,7 @@ class SubGit():
 
         if not has_dirty_repos:
             for repo in good_repos:
-                repo_name = basename(path)
+                repo_name = basename(repo)
                 if path not in bad_path:
                     shutil.rmtree(repo)
                     log.info(f"Successfully removed repo: {repo_name}")
