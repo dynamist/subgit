@@ -33,8 +33,10 @@ Usage:
     subgit fetch [<repo> ...] [options]
 
 Options:
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
+    -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -43,8 +45,10 @@ Usage:
     subgit init [<name> <url>] [options]
 
 Options:
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
+    -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -54,8 +58,10 @@ Usage:
 
 Options:
     <repo>       Name of repo to pull
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
+    -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -64,8 +70,10 @@ Usage:
     subgit status [options]
 
 Options:
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
+    -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -74,8 +82,10 @@ Usage:
     subgit delete [<repo> ...] [options]
 
 Options:
-    -y, --yes    Answers yes to all questions (use with caution)
-    -h, --help   Show this help message and exit
+    -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -143,7 +153,7 @@ def run(cli_args, sub_args):
 
     from subgit.core import SubGit
 
-    core = SubGit(answer_yes=sub_args["--yes"])
+    core = SubGit(config_file_path=sub_args["--conf"], answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
