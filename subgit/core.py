@@ -3,10 +3,10 @@
 # python std lib
 import logging
 import os
-from os.path import basename
 import re
 import sys
 import shutil
+from os.path import basename
 from subprocess import PIPE, Popen
 
 # subgit imports
@@ -22,7 +22,6 @@ from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
-import pysnooper
 
 log = logging.getLogger(__name__)
 
@@ -495,17 +494,16 @@ class SubGit():
 
         Checks if the repo(s) are valid git repo(s) and if there are any untracked changes.
         """
-
         config = self._get_config_file()
-
         active_repos = self._get_active_repos(config)
-
         active_repos_dict = config.get("repos", [])
 
-        if repo_names is None:  # If no names are specified in the command
+        # If no names are specified in the command
+        if repo_names is None:
             repo_choices = ", ".join(active_repos_dict)
 
-        if isinstance(repo_names, list):  # If at least one name was specified
+        # If at least one name was specified
+        if isinstance(repo_names, list):
             repo_choices = ", ".join(repo_names)
 
         answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'")
@@ -513,28 +511,26 @@ class SubGit():
         if answer:
             self._delete_repo(active_repos, repo_names)
 
-    @pysnooper.snoop()
     def _delete_repo(self, active_repos, repos=None):
         """
-        Helper method that recieves a list of repos to delete and takes care of the logic
+        Helper method that recieves a list of repos. Deletes them as long as not one or
+        more of them creates a conflict. (e.g repo(s) is not in the config file,
+        path(s) is not to a valid git repo or repo(s) is dirty)
         """
+        in_conf_file = True
+        has_dirty_repos = False
+        repo_paths = []
+        bad_path = []
+        good_repos = []
+
         if not repos:
             repos = active_repos
 
-        in_conf_file = True
-
-        has_dirty_repos = False
-
-        repo_paths = []
-
-        bad_path = []
-
-        good_repos = []
-
         for name in repos:
             repo_paths.append(os.path.join(os.getcwd(), name))
+
             if name not in active_repos:
-                log.warning(f"Argument: '{name}' does not exist in '.subgit.yml'")
+                log.critical(f"'{name}' does not exist in {self.subgit_config_file_name} config file.")
                 in_conf_file = False
 
         if not in_conf_file:
@@ -542,6 +538,7 @@ class SubGit():
 
         for path in repo_paths:
             repo_name = basename(path)
+
             if not os.path.exists(path):
                 log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
                 bad_path.append(path)
@@ -549,13 +546,15 @@ class SubGit():
 
         for path in repo_paths:
             repo_name = basename(path)
+
             if not self.is_valid_repo(path):
-                log.warning(f"fatal: '{repo_name}' is not a git repo")
+                log.critical(f"'{repo_name}' is not a git repo")
                 return 1
 
         for path in repo_paths:
             current_repo = Repo(path)
             repo_name = basename(path)
+
             if self.check_remote(current_repo, repo_name):
                 has_dirty_repos = True
             else:
@@ -564,26 +563,32 @@ class SubGit():
         if not has_dirty_repos:
             for repo in good_repos:
                 repo_name = basename(repo)
+
                 if path not in bad_path:
                     shutil.rmtree(repo)
                     log.info(f"Successfully removed repo: {repo_name}")
 
     def check_remote(self, repo, repo_name):
         """
-        Takes repo object and name of directory to delete
+        Takes repo object and name of directory to delete. Returns True if repo has either
+        differences in remote and local commits, and/or has any untracked files.
         """
-        is_diff = False
+        has_remote_difference = False
         for remote in repo.remotes:
             for branch in repo.branches:
                 remote_commit = remote.refs[str(branch)].commit
                 local_commit = repo.heads[str(branch)].commit
-                if (remote_commit != local_commit) or repo.is_dirty(untracked_files=True):
-                    is_diff = True
-                    log.warning(f"fatal: '{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
 
-        return is_diff
+                if (remote_commit != local_commit) or repo.is_dirty(untracked_files=True):
+                    has_remote_difference = True
+                    log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+
+        return has_remote_difference
 
     def is_valid_repo(self, path):
+        """
+        Method that checks if the given path is a valid git repo. Returns false if not.
+        """
         try:
             Repo(path)
         except git.exc.InvalidGitRepositoryError:
