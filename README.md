@@ -81,6 +81,19 @@ subgit fetch
 subgit fetch pykwalify
 ```
 
+## Delete pulled repos
+
+You can delete local copies of your repos by using `subgit delete` command. This will only remove your repos locally, also only if they're considered 'clean'. This means that there are no commited changes or untracked files. You will get no explicit warning about what changes makes the repos 'dirty', except the specific repo which contain the changes.
+
+The delete command supports the selection of either all repos or a subset of repos.
+
+```bash
+# Delete all repos in sequence
+subgit delete
+
+# Delete one specified repo
+subgit delete pykwalify
+```
 
 ## Development
 
