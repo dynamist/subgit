@@ -8,6 +8,11 @@ The main two advantages over other solutions is that when compared to the normal
 
 This tool has been primarly constructed to be a part inside a CI/CD solution where you want to in a build step, clone the repo that contains the `.subgit.yml` config file, clone out whatever branches or tags for all the child repos and then perform some action or build step or test or similar function while using all of the repos from one spot.
 
+In the event of you having a configuration file with another name than `.subgit.yml`, you can easily add the -c, --conf flag after the sub command in the command to point to a optional configuration file.
+
+```bash
+subgit pull -c path/to/conf-file
+```
 
 ## Usage
 
