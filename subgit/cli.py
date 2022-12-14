@@ -21,6 +21,7 @@ Commands:
     status   Show status of each configured repo
     delete   Delete one or more local Git repos
     import   import repos from github or gitlab and creates a config file
+    reset    Reset repo(s) previous tracked state
 
 Options:
     --help          Show this help message and exit
@@ -34,7 +35,7 @@ Usage:
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
-    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
 """
@@ -46,7 +47,7 @@ Usage:
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
-    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
 """
@@ -59,7 +60,7 @@ Usage:
 Options:
     <repo>       Name of repo to pull
     -y, --yes                  Answers yes to all questions (use with caution)
-    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
 """
@@ -71,7 +72,7 @@ Usage:
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
-    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
 """
@@ -83,6 +84,20 @@ Usage:
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
+                               something other than '.subgit.yml' or '.sgit.yml')
+    -h, --help                 Show this help message and exit
+"""
+
+sub_reset_args = """
+Usage:
+    subgit reset [<repo> ...] [options]
+
+Options:
+    -y, --yes                  Answers yes to all questions (use with caution)
+    --hard                     Doing a hard reset will result in removing every 
+                               untracked file as well as any changes made since 
+                               the last commit
     -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
@@ -142,6 +157,8 @@ def parse_cli():
         sub_args = docopt(sub_delete_args, argv=argv)
     elif cli_args["<command>"] == "import":
         sub_args = docopt(sub_import_args, argv=argv)
+    elif cli_args["<command>"] == "reset":
+        sub_args = docopt(sub_reset_args, argv=argv)
     else:
         extras(
             True,
@@ -172,7 +189,7 @@ def run(cli_args, sub_args):
     from subgit.core import SubGit
     from subgit.importer.git_importer import GitImport
 
-    core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"])
+    core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"], hard_reset=sub_args.get("--hard"))
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
@@ -199,7 +216,13 @@ def run(cli_args, sub_args):
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.delete(repos)
+        retcode = core.delete_reset(repo_names=repos, command="delete")
+
+    if cli_args["<command>"] == "reset":
+        repos = sub_args["<repo>"]
+        repos = repos or None
+
+        retcode = core.delete_reset(repo_names=repos, command="reset")
 
     if cli_args["<command>"] == "import":
         git_importer = GitImport(

@@ -23,13 +23,15 @@ from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
+import pysnooper
 
 log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(self, config_file_path=None, answer_yes=False):
+    def __init__(self, config_file_path=None, answer_yes=False, hard_reset=False):
         self.answer_yes = answer_yes
+        self.hard_reset = hard_reset
 
         if not config_file_path:
             # First attempt the old filename
@@ -508,11 +510,13 @@ class SubGit():
                 log.info(f"Current commit summary on HEAD in git repo '{name}': ")
                 log.info(f"  {str(repo.head.commit.summary)}")
 
-    def delete(self, repo_names=None):
+    def delete_reset(self, repo_names=None, command=None):
         """
         Method takes zero or one repo name as argument.
 
         Checks if the repo(s) are valid git repo(s) and if there are any untracked changes.
+
+        Used for both 'subgit delete' as well as 'subgit reset' to avoid code duplication.
         """
         config = self._get_config_file()
         active_repos = self._get_active_repos(config)
@@ -526,10 +530,13 @@ class SubGit():
         if isinstance(repo_names, list):
             repo_choices = ", ".join(repo_names)
 
-        answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'")
+        answer = self.yes_no(f"Are you sure you want to {command} the following repos '{repo_choices}'")
 
         if answer:
-            self._delete_repo(active_repos, repo_names)
+            if command == "delete":
+                self._delete_repo(active_repos, repo_names)
+            elif command == "reset":
+                self._reset(active_repos, repo_names, active_repos_dict)
 
     def _delete_repo(self, active_repos, repos=None):
         """
@@ -582,8 +589,9 @@ class SubGit():
             current_repo = Repo(path)
             repo_name = basename(path)
 
-            if self.check_remote(current_repo, repo_name):
+            if self.check_remote(current_repo):
                 has_dirty_repos = True
+                log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
             else:
                 good_repos.append(path)
 
@@ -595,20 +603,22 @@ class SubGit():
                     shutil.rmtree(repo)
                     log.info(f"Successfully removed repo: {repo_name}")
 
-    def check_remote(self, repo, repo_name):
+    def check_remote(self, repo):
         """
-        Takes repo object and name of directory to delete. Returns True if repo has either
+        Takes repo object and name of directory to check. Returns True if repo has either
         differences in remote and local commits, and/or has any untracked files.
         """
         has_remote_difference = False
         for remote in repo.remotes:
             for branch in repo.branches:
-                remote_commit = remote.refs[str(branch)].commit
-                local_commit = repo.heads[str(branch)].commit
+                try:
+                    remote_commit = remote.refs[str(branch)].commit
+                    local_commit = repo.heads[str(branch)].commit
+                except IndexError:
+                    return True
 
                 if (remote_commit != local_commit) or repo.is_dirty(untracked_files=True):
                     has_remote_difference = True
-                    log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
 
         return has_remote_difference
 
@@ -622,6 +632,70 @@ class SubGit():
             return False
 
         return True
+
+    @pysnooper.snoop()
+    def _reset(self, active_repos, repos=None, active_repos_dict=None):
+        """
+        Main helper method for 'subgit reset' command. This will take a list of repos and find any diffs and
+        reset them back to the same state they were when they were first pulled.
+        """
+        in_conf_file: bool = True
+        repo_paths: list = []
+        bad_path: list = []
+        dirty_repos: list = []
+
+        if not repos:
+            repos = active_repos
+
+        for name in repos:
+            repo_paths.append(os.path.join(os.getcwd(), name))
+
+            if name not in active_repos:
+                log.critical(f"'{name}' does not exist in {self.subgit_config_file_name} config file.")
+                in_conf_file = False
+
+        if not in_conf_file:
+            return 1
+
+        for path in repo_paths:
+            repo_name = basename(path)
+
+            if not os.path.exists(path):
+                log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
+                bad_path.append(path)
+                repo_paths.remove(path)
+
+        for path in repo_paths:
+            repo_name = basename(path)
+
+            if not self.is_valid_repo(path):
+                log.critical(f"'{repo_name}' is not a git repo")
+                return 1
+
+        for path in repo_paths:
+            current_repo = Repo(path)
+            repo_name = basename(path)
+
+            if self.check_remote(current_repo):
+                dirty_repos.append(path)
+            else:
+                log.info(f"{repo_name} is clean")
+
+        # For loop that resets repo back to the latest remote commit.
+        # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
+
+        for repo in dirty_repos:
+            repo_to_reset = Repo(repo)
+            repo_name = basename(repo)
+            repo_to_reset.git.reset(repo_to_reset.remote())
+            log.info(f"Successfully reset {repo_name} to latest commit on remote")
+
+            if self.hard_reset:
+                repo_to_reset.git.clean("-f")
+                log.info(f"Successfully cleaned {repo_name} from untracked files")
+                return
+
+            log.info(f"{repo_name} still contains untracked files. Consider adding --hard flag")
 
     def _filter(self, sequence, regex_list):
         """
