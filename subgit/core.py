@@ -27,9 +27,9 @@ log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(self, config_file_path=None, answer_yes=False, hard_reset=False):
+    def __init__(self, config_file_path=None, answer_yes=False, hard_flag=False):
         self.answer_yes = answer_yes
-        self.hard_reset = hard_reset
+        self.hard_flag = hard_flag
 
         if not config_file_path:
             # First attempt the old filename
@@ -508,13 +508,11 @@ class SubGit():
                 log.info(f"Current commit summary on HEAD in git repo '{name}': ")
                 log.info(f"  {str(repo.head.commit.summary)}")
 
-    def delete_reset(self, repo_names=None, command=None):
+    def delete(self, repo_names=None):
         """
         Method takes zero or one repo name as argument.
 
         Checks if the repo(s) are valid git repo(s) and if there are any untracked changes.
-
-        Used for both 'subgit delete' as well as 'subgit reset' to avoid code duplication.
         """
         config = self._get_config_file()
         active_repos = self._get_active_repos(config)
@@ -528,13 +526,28 @@ class SubGit():
         if isinstance(repo_names, list):
             repo_choices = ", ".join(repo_names)
 
-        answer = self.yes_no(f"Are you sure you want to {command} the following repos '{repo_choices}'")
+        answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'?")
 
         if answer:
-            if command == "delete":
-                self._delete_repo(active_repos, repo_names)
-            elif command == "reset":
-                self._reset(active_repos, repo_names, active_repos_dict)
+            self._delete_repo(active_repos, repo_names)
+
+    def reset(self, repo_names=None):
+        config = self._get_config_file()
+        active_repos = self._get_active_repos(config)
+        active_repos_dict = config.get("repos", [])
+
+        # If no names are specified in the command
+        if repo_names is None:
+            repo_choices = ", ".join(active_repos_dict)
+
+        # If at least one name was specified
+        if isinstance(repo_names, list):
+            repo_choices = ", ".join(repo_names)
+
+        answer = self.yes_no(f"Are you sure you want to reset the following repos '{repo_choices}'?")
+
+        if answer:
+            self._reset(active_repos, repo_names, active_repos_dict)
 
     def _delete_repo(self, active_repos, repos=None):
         """
@@ -543,6 +556,7 @@ class SubGit():
         path(s) is not to a valid git repo or repo(s) is dirty)
         """
         in_conf_file = True
+        valid_repos = True
         has_dirty_repos = False
         repo_paths = []
         bad_path = []
@@ -580,8 +594,11 @@ class SubGit():
             repo_name = basename(path)
 
             if not self.is_valid_repo(path):
-                log.critical(f"'{repo_name}' is not a git repo")
-                return 1
+                log.warning(f"'{repo_name}' is not a git repo")
+                valid_repos = False
+
+        if not valid_repos:
+            return 1
 
         for path in repo_paths:
             current_repo = Repo(path)
@@ -613,7 +630,7 @@ class SubGit():
                     remote_commit = remote.refs[str(branch)].commit
                     local_commit = repo.heads[str(branch)].commit
                 except IndexError:
-                    return True
+                    has_remote_difference = True
 
                 if (remote_commit != local_commit) or repo.is_dirty(untracked_files=True):
                     has_remote_difference = True
@@ -633,13 +650,14 @@ class SubGit():
 
     def _reset(self, active_repos, repos=None, active_repos_dict=None):
         """
-        Main helper method for 'subgit reset' command. This will take a list of repos and find any diffs and
-        reset them back to the same state they were when they were first pulled.
+        Will take a list of repos and find any diffs and reset them back
+        to the same state they were when they were first pulled.
         """
-        in_conf_file: bool = True
-        repo_paths: list = []
-        bad_path: list = []
-        dirty_repos: list = []
+        in_conf_file = True
+        valid_repos = True
+        repo_paths = []
+        bad_path = []
+        dirty_repos = []
 
         if not repos:
             repos = active_repos
@@ -667,7 +685,10 @@ class SubGit():
 
             if not self.is_valid_repo(path):
                 log.critical(f"'{repo_name}' is not a git repo")
-                return 1
+                valid_repos = False
+
+        if not valid_repos:
+            return 1
 
         for path in repo_paths:
             current_repo = Repo(path)
@@ -678,21 +699,19 @@ class SubGit():
             else:
                 log.info(f"{repo_name} is clean")
 
-        # For loop that resets repo back to the latest remote commit.
+        # Resets repo back to the latest remote commit.
         # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
-
         for repo in dirty_repos:
             repo_to_reset = Repo(repo)
             repo_name = basename(repo)
             repo_to_reset.git.reset(repo_to_reset.remote())
             log.info(f"Successfully reset {repo_name} to latest commit on remote")
 
-            if self.hard_reset:
+            if self.hard_flag:
                 repo_to_reset.git.clean("-f")
                 log.info(f"Successfully cleaned {repo_name} from untracked files")
-                return
-
-            log.info(f"{repo_name} still contains untracked files. Consider adding --hard flag")
+            elif self.check_remote(repo_to_reset):
+                log.info(f"{repo_name} still contains untracked files. Consider adding --hard flag")
 
     def _filter(self, sequence, regex_list):
         """
