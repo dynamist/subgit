@@ -127,7 +127,20 @@ subgit import gitlab <YOUR_USERNAME>
 
 # You can redirect the output to another file with -o flag
 subgit import github <YOUR_USERNAME> -o .some-other-file.yml
+```
 
+## Reset changed repos
+
+You can reset repos in which changes have been made such as new files or new commits using `subgit reset` command. Using no particular option, `subgit reset` will reset your repo to the latest pushed commit. I will compare your working directory to that of the remote. If there are no changes, it will simply tell you that the current repo is clean. If there are any untracked files (files that are not added or commited) the '--hard' flag has to be appended to the command in order to force a reset.
+
+The reset command supports the selection of either all repos or a subset of repos.
+
+```bash
+# Reset all repos in sequence if they are dirty
+subgit reset
+
+# Reset one specified repo if it's dirty
+subgit reset pykwalify
 ```
 
 ## Development
