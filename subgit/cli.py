@@ -189,7 +189,11 @@ def run(cli_args, sub_args):
     from subgit.core import SubGit
     from subgit.importer.git_importer import GitImport
 
-    core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"], hard_reset=sub_args.get("--hard"))
+    core = SubGit(
+        config_file_path=sub_args.get("--conf"), 
+        answer_yes=sub_args["--yes"],
+        hard_flag=sub_args.get("--hard")
+    )
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
@@ -216,13 +220,13 @@ def run(cli_args, sub_args):
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.delete_reset(repo_names=repos, command="delete")
+        retcode = core.delete(repo_names=repos)
 
     if cli_args["<command>"] == "reset":
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.delete_reset(repo_names=repos, command="reset")
+        retcode = core.reset(repo_names=repos)
 
     if cli_args["<command>"] == "import":
         git_importer = GitImport(
