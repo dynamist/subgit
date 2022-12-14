@@ -23,8 +23,6 @@ from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
-import pysnooper
-
 log = logging.getLogger(__name__)
 
 
@@ -633,7 +631,6 @@ class SubGit():
 
         return True
 
-    @pysnooper.snoop()
     def _reset(self, active_repos, repos=None, active_repos_dict=None):
         """
         Main helper method for 'subgit reset' command. This will take a list of repos and find any diffs and
