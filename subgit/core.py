@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import shutil
+from multiprocessing import Pool
 from os.path import basename
 from subprocess import PIPE, Popen
 
@@ -239,19 +240,22 @@ class SubGit():
         if missing_any_repo:
             return 1
 
-        for repo_name in repos_to_fetch:
-            repo_path = os.path.join(os.getcwd(), repo_name)
-            git_repo = Repo(repo_path)
-
-            log.info(f"Fetching git repo '{repo_name}'")
-            fetch_results = git_repo.remotes.origin.fetch()
-            log.info(f"Fetching completed for repo '{repo_name}'")
-
-            for fetch_result in fetch_results:
-                log.info(f" - Fetch result: {fetch_result.name}")
+        with Pool(8) as pool:
+            pool.map(self.multiprocces_fetch, repos_to_fetch)
 
         log.info(f"Fetching for all repos completed")
         return 0
+
+    def multiprocces_fetch(self, repo_name):
+        repo_path = os.path.join(os.getcwd(), repo_name)
+        git_repo = Repo(repo_path)
+
+        log.info(f"Fetching git repo '{repo_name}'")
+        fetch_results = git_repo.remotes.origin.fetch()
+        log.info(f"Fetching completed for repo '{repo_name}'")
+
+        for fetch_result in fetch_results:
+            log.info(f" - Fetch result: {fetch_result.name}")
 
     def _get_active_repos(self, config):
         """
