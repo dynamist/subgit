@@ -240,13 +240,13 @@ class SubGit():
         if missing_any_repo:
             return 1
 
-        with Pool(8) as pool:
-            pool.map(self.multiprocces_fetch, repos_to_fetch)
+        with Pool(WORKER_COUNT) as pool:
+            pool.map(self.fetch_repo, repos_to_fetch)
 
         log.info(f"Fetching for all repos completed")
         return 0
 
-    def multiprocces_fetch(self, repo_name):
+    def fetch_repo(self, repo_name):
         repo_path = os.path.join(os.getcwd(), repo_name)
         git_repo = Repo(repo_path)
 
