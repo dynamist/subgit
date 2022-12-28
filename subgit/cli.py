@@ -7,9 +7,11 @@ import pdb
 import sys
 import traceback
 
+# subgit imports
+from subgit.importer import github
+
 # 3rd party imports
 from docopt import docopt, extras, Option, DocoptExit
-
 
 base_args = """
 Usage:
@@ -21,6 +23,7 @@ Commands:
     pull     Update one or all Git repos
     status   Show status of each configured repo
     delete   Delete one or more local Git repos
+    import   import repos from github or gitlab and creates a config file
 
 Options:
     --help          Show this help message and exit
@@ -83,9 +86,21 @@ Usage:
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
-    -c <file>, --conf <file>   For using optional config file (use if conf file is 
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
+"""
+
+
+sub_import_args = """
+Usage:
+    subgit import [<source>] [<username>|<organisation>] [options]
+
+Options:
+    -y, --yes                                Answers yes to all questions (use with caution)
+    -o <filename>, --output-file <filename>  Used to specify output filename
+    -a, --archived                           Writes only archived repos to output file
+    -h, --help                               Show this help message and exit
 """
 
 
@@ -124,6 +139,8 @@ def parse_cli():
         sub_args = docopt(sub_status_args, argv=argv)
     elif cli_args["<command>"] == "delete":
         sub_args = docopt(sub_delete_args, argv=argv)
+    elif cli_args["<command>"] == "import":
+        sub_args = docopt(sub_import_args, argv=argv)
     else:
         extras(
             True,
@@ -152,8 +169,10 @@ def run(cli_args, sub_args):
     log.debug(sub_args)
 
     from subgit.core import SubGit
+    from subgit.importer.github import GithubImport
 
-    core = SubGit(config_file_path=sub_args["--conf"], answer_yes=sub_args["--yes"])
+    core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"])
+    github = GithubImport(config_file_name=sub_args["--output-file"], answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
@@ -181,6 +200,14 @@ def run(cli_args, sub_args):
         repos = repos or None
 
         retcode = core.delete(repos)
+
+    if cli_args["<command>"] == "import":
+        source = sub_args["<source>"]
+        username = sub_args["<username>"]
+        organisation = sub_args["<organisation>"]
+        if source == "github":
+            if username:
+                retcode = github.import_github(username)
 
     return retcode
 
