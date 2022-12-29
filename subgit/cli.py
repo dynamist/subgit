@@ -7,9 +7,6 @@ import pdb
 import sys
 import traceback
 
-# subgit imports
-from subgit.importer import github
-
 # 3rd party imports
 from docopt import docopt, extras, Option, DocoptExit
 
@@ -94,7 +91,7 @@ Options:
 
 sub_import_args = """
 Usage:
-    subgit import [<source>] [<username>|<organisation>] [options]
+    subgit import <source> <owner> [options]
 
 Options:
     -y, --yes                                Answers yes to all questions (use with caution)
@@ -169,10 +166,10 @@ def run(cli_args, sub_args):
     log.debug(sub_args)
 
     from subgit.core import SubGit
-    from subgit.importer.github import GithubImport
+    from subgit.importer.git_importer import GitImport
 
     core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"])
-    github = GithubImport(config_file_name=sub_args["--output-file"], answer_yes=sub_args["--yes"])
+    git_importer = GitImport(config_file_name=sub_args.get("--output-file"), answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
@@ -203,11 +200,12 @@ def run(cli_args, sub_args):
 
     if cli_args["<command>"] == "import":
         source = sub_args["<source>"]
-        username = sub_args["<username>"]
-        organisation = sub_args["<organisation>"]
+        owner = sub_args["<owner>"]
         if source == "github":
-            if username:
-                retcode = github.import_github(username)
+            retcode = git_importer.import_github(owner)
+        
+        if source == "gitlab":
+            retcode = git_importer.import_gitlab(owner)
 
     return retcode
 

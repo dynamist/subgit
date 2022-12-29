@@ -343,6 +343,19 @@ class SubGit():
             log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
+        """
+        bad_repo_configs = []
+
+        for name in repos:
+            repo_config = config["repos"][name]
+            print(repo_config)
+            url = repo_config["url"]
+            revision = repo_config["revision"]
+            if "branch" in revision:
+                branch = revision["branch"]
+                print(git.Git(f"{url}"))
+        """
+
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
         for name in repos:
