@@ -91,7 +91,7 @@ Options:
 
 sub_import_args = """
 Usage:
-    subgit import <source> <owner> [options]
+    subgit import (github | gitlab) <owner> [options]
 
 Options:
     -y, --yes                                Answers yes to all questions (use with caution)
@@ -169,7 +169,6 @@ def run(cli_args, sub_args):
     from subgit.importer.git_importer import GitImport
 
     core = SubGit(config_file_path=sub_args.get("--conf"), answer_yes=sub_args["--yes"])
-    git_importer = GitImport(config_file_name=sub_args.get("--output-file"), answer_yes=sub_args["--yes"])
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
@@ -199,12 +198,18 @@ def run(cli_args, sub_args):
         retcode = core.delete(repos)
 
     if cli_args["<command>"] == "import":
-        source = sub_args["<source>"]
+        git_importer = GitImport(
+            config_file_name=sub_args.get("--output-file"), 
+            answer_yes=sub_args["--yes"],
+            is_archived=sub_args.get("--archived")
+        )
+        github = sub_args["github"]
+        gitlab = sub_args["gitlab"]
         owner = sub_args["<owner>"]
-        if source == "github":
+        if github:
             retcode = git_importer.import_github(owner)
         
-        if source == "gitlab":
+        if gitlab:
             retcode = git_importer.import_gitlab(owner)
 
     return retcode

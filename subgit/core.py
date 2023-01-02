@@ -343,18 +343,20 @@ class SubGit():
             log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
-        """
         bad_repo_configs = []
 
         for name in repos:
             repo_config = config["repos"][name]
-            print(repo_config)
             url = repo_config["url"]
             revision = repo_config["revision"]
             if "branch" in revision:
-                branch = revision["branch"]
-                print(git.Git(f"{url}"))
-        """
+                if not revision["branch"]:
+                    bad_repo_configs.append(name)
+
+        if bad_repo_configs:
+            bad_repos_string = ", ".join(repo for repo in bad_repo_configs)
+            log.error(f"One or more repos in congif file has an invalid branch option... {bad_repos_string}")
+            return 1
 
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
@@ -557,9 +559,16 @@ class SubGit():
             repo_name = basename(path)
 
             if not os.path.exists(path):
-                log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
+                log.info(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
                 bad_path.append(path)
+
+        for path in bad_path:
+            if path in repo_paths:
                 repo_paths.remove(path)
+        
+        if not repo_paths:
+            log.error("No repos found to remove. Exiting...")
+            return 1
 
         for path in repo_paths:
             repo_name = basename(path)
