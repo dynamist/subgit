@@ -26,18 +26,41 @@ class GitImport(SubGit):
             self.subgit_config_file_name = ".subgit.yml"
 
             if self.is_archived:
-                self.subgit_config_file_name = ".subgit-archived.yml"    
+                self.subgit_config_file_name = ".subgit-archived.yml"
 
             self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
         else:
             self.subgit_config_file_name = config_file_name
             self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
 
+    def _if_github_cli(self, c):
+        if c == "github":
+            shell_command = "gh"
+        else:
+            shell_command = "gitlab"
+
+        try:
+            out = subprocess.run([
+                    shell_command,
+                    "--help"
+                ],
+                shell=False,
+                capture_output=True,
+            )
+        except FileNotFoundError:
+            return 1
+
+        return out.returncode
+
     def import_github(self, owner):
         """
-        Given a username or organisation name, this method lists all repos connected to it 
+        Given a username or organisation name, this method lists all repos connected to it
         on github and writes a subgit config file.
         """
+        if self._if_github_cli("github") != 0:
+            log.error("Github cli not installed. Exiting subgit...")
+            return 1
+
         out = subprocess.run([
                 "gh",
                 "repo",
@@ -103,9 +126,13 @@ class GitImport(SubGit):
 
     def import_gitlab(self, owner):
         """
-        Given a username or organisation name, this method lists all repos connected to it 
-        on gitlab and writes a subgit config file. 
+        Given a username or organisation name, this method lists all repos connected to it
+        on gitlab and writes a subgit config file.
         """
+        if self._if_github_cli("gitlab") != 0:
+            log.error("Gitlab cli not installed. Exiting subgit...")
+            return 1
+
         out = subprocess.run(
             [
                 "gitlab",
