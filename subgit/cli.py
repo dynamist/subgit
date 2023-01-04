@@ -98,6 +98,10 @@ Options:
     -o <filename>, --output-file <filename>  Used to specify output filename
     -a, --archived                           Writes only archived repos to output file
     -h, --help                               Show this help message and exit
+
+Information:
+    The argument 'owner' must be either username or organisation name. Make sure the
+    username/organisation corresponds to the chosen source (github | gitlab)
 """
 
 
