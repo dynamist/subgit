@@ -210,6 +210,7 @@ def run(cli_args, sub_args):
         github = sub_args["github"]
         gitlab = sub_args["gitlab"]
         owner = sub_args["<owner>"]
+        
         if github:
             retcode = git_importer.import_github(owner)
         

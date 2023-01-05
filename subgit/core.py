@@ -349,6 +349,7 @@ class SubGit():
             repo_config = config["repos"][name]
             url = repo_config["url"]
             revision = repo_config["revision"]
+
             if "branch" in revision:
                 if not revision["branch"]:
                     bad_repo_configs.append(name)
