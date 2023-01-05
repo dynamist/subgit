@@ -106,11 +106,17 @@ You can import a list of repos and create a new or overwrite an existing configu
 
 ### Authentication for github cli
 
-Download the latest release from here https://github.com/cli/cli/releases/ depending on your system it might be a deb or rpm package. Once installed you should have access to gh command from your terminal. Login to your github account with gh auth login. To verify you have correct access you can run gh repo list and it should list your personal github repos.
+Download the latest release for github cli from here https://github.com/cli/cli/releases/ depending on your system. Once installed you should have access to `gh` command from your terminal.
+
+Login to your github account with `gh auth login`. To verify you have correct access you can run `gh repo list` and it should list your personal github repos.
 
 ### Authentication for gitlab cli
 
-Install python-gitlab from: https://python-gitlab.readthedocs.io/en/stable/, generate a new private API token for your account in gitlab. Create one here https://gitlab.com/-/profile/personal_access_tokens and set it to readonly permissions for everything including API access. Export your token in your terminal with export GITLAB_PRIVATE_TOKEN=<YOUR TOKEN> and it will allow for api access.
+Install python-gitlab from: https://python-gitlab.readthedocs.io/en/stable/
+
+Next generate a new private API token for your account in gitlab. Create one here https://gitlab.com/-/profile/personal_access_tokens and set it to `readonly permissions` for everything including API access. 
+
+Export your token in your terminal with `export GITLAB_PRIVATE_TOKEN=<YOUR TOKEN>` and it will allow for api access. Test this by running `gitlab projects list`
 
 ```bash
 # Import all repos from github and write them to '.subgit.yml'
@@ -118,6 +124,9 @@ subgit import github <YOUR_USERNAME>
 
 # Import all repos from gitlab and write them to '.subgit.yml'
 subgit import gitlab <YOUR_USERNAME>
+
+# You can redirect the output to another file with -o flag
+subgit import github <YOUR_USERNAME> -o .some-other-file.yml
 
 ```
 

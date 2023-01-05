@@ -27,14 +27,18 @@ class GitImport(SubGit):
 
             if self.is_archived:
                 self.subgit_config_file_name = ".subgit-archived.yml"
-
-            self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
         else:
             self.subgit_config_file_name = config_file_name
-            self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
 
-    def _if_github_cli(self, c):
-        if c == "github":
+        self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
+
+    def _cli_installed(self, source):
+        """
+        When passed either 'github' or 'gitlab' to this method,
+        returns True if the cli for the given source is installed,
+        else returns False
+        """
+        if source == "github":
             shell_command = "gh"
         else:
             shell_command = "gitlab"
@@ -48,28 +52,24 @@ class GitImport(SubGit):
                 capture_output=True,
             )
         except FileNotFoundError:
-            return 1
+            return False
 
-        return out.returncode
+        return True
 
     def import_github(self, owner):
         """
         Given a username or organisation name, this method lists all repos connected to it
         on github and writes a subgit config file.
         """
-        if self._if_github_cli("github") != 0:
+        if not self._cli_installed("github"):
             log.error("Github cli not installed. Exiting subgit...")
             return 1
 
         out = subprocess.run([
-                "gh",
-                "repo",
-                "list",
+                "gh", "repo", "list",
                 f"{owner}",
-                "--json",
-                "id,name,defaultBranchRef,sshUrl,isArchived",
-                "-L",
-                "100"
+                "--json", "id,name,defaultBranchRef,sshUrl,isArchived",
+                "-L", "100"
             ],
             shell=False,
             capture_output=True,
@@ -129,7 +129,7 @@ class GitImport(SubGit):
         Given a username or organisation name, this method lists all repos connected to it
         on gitlab and writes a subgit config file.
         """
-        if self._if_github_cli("gitlab") != 0:
+        if not self._cli_installed("gitlab"):
             log.error("Gitlab cli not installed. Exiting subgit...")
             return 1
 
