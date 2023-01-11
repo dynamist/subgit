@@ -22,6 +22,7 @@ Commands:
     delete   Delete one or more local Git repos
     import   import repos from github or gitlab and creates a config file
     reset    Reset repo(s) previous tracked state
+    clean    Clean repo(s) from untracked files
 
 Options:
     --help          Show this help message and exit
@@ -89,15 +90,17 @@ Options:
     -h, --help                 Show this help message and exit
 """
 
+
 sub_reset_args = """
 Usage:
     subgit reset [<repo> ...] [options]
 
 Options:
     -y, --yes                  Answers yes to all questions (use with caution)
-    --hard                     Doing a hard reset will result in removing every 
-                               untracked file as well as any changes made since 
-                               the last commit
+    --hard                     Resets the index and working tree. Any changes to tracked
+                               files in the working tree since <commit> are discarded.
+                               Any untracked files or directories in the way of writing any
+                               tracked files are simply deleted.
     -c <file>, --conf <file>   For using optional config file (use if conf file is
                                something other than '.subgit.yml' or '.sgit.yml')
     -h, --help                 Show this help message and exit
@@ -117,6 +120,31 @@ Options:
 Information:
     The argument 'owner' must be either username or organisation name. Make sure the
     username/organisation corresponds to the chosen source (github | gitlab)
+"""
+
+
+sub_clean_args = """
+Usage:
+    subgit clean [-d] [-f] [-n] [<repo> ...]
+
+Options:
+    -d                         Normally, when no <pathspec> is specified, git clean will not recurse
+                               into untracked directories to avoid removing too much. Specify -d
+                               to have it recurse into such directories as well. If a <pathspec> is specified,-d is irrelevant;
+                               all untracked files matching the specified paths
+                               (with exceptions for nested git directories mentioned under --force) will be removed.
+
+    -f, --force                If the Git configuration variable clean.requireForce is not set to false,
+                               git clean will refuse to delete files or directories unless given -f or -i.
+                               Git will refuse to modify untracked nested git repositories
+                               (directories with a .git subdirectory) unless a second -f is given.
+
+    -n, --dry-run              Don’t actually remove anything, just show what would be done.
+
+    -c <file>, --conf <file>   For using optional config file (use if conf file is
+                               something other than '.subgit.yml' or '.sgit.yml')
+
+    -h, --help                 Show this help message and exit
 """
 
 
@@ -159,6 +187,8 @@ def parse_cli():
         sub_args = docopt(sub_import_args, argv=argv)
     elif cli_args["<command>"] == "reset":
         sub_args = docopt(sub_reset_args, argv=argv)
+    elif cli_args["<command>"] == "clean":
+        sub_args = docopt(sub_clean_args, argv=argv)
     else:
         extras(
             True,
@@ -190,8 +220,8 @@ def run(cli_args, sub_args):
     from subgit.importer.git_importer import GitImport
 
     core = SubGit(
-        config_file_path=sub_args.get("--conf"), 
-        answer_yes=sub_args["--yes"],
+        config_file_path=sub_args.get("--conf"),
+        answer_yes=sub_args.get("--yes"),
         hard_flag=sub_args.get("--hard")
     )
 
@@ -243,6 +273,17 @@ def run(cli_args, sub_args):
         
         if gitlab:
             retcode = git_importer.import_gitlab(owner)
+
+    if cli_args["<command>"] == "clean":
+        repos = sub_args["<repo>"]
+        repos = repos or None
+
+        retcode = core.clean(
+            repo_names=repos, 
+            recurse_into_dir=sub_args.get("-d"),
+            force=sub_args.get("--force"),
+            dry_run=sub_args.get("--dry-run")
+        )
 
     return retcode
 
