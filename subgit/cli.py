@@ -125,7 +125,7 @@ Information:
 
 sub_clean_args = """
 Usage:
-    subgit clean [-d] [-f] [-n] [<repo> ...]
+    subgit clean (-d|-f|-n)... [<repo> ...]
 
 Options:
     -d                         Normally, when no <pathspec> is specified, git clean will not recurse

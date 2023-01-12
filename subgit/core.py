@@ -22,21 +22,13 @@ from git import Repo, Git
 from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
-import pysnooper
+
 
 log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(
-        self,
-        config_file_path=None,
-        answer_yes=False,
-        hard_flag=False,
-        recurse_into_dir=None,
-        force=None,
-        dry_run=None
-    ):
+    def __init__(self, config_file_path=None, answer_yes=False, hard_flag=False):
         self.answer_yes = answer_yes
         self.hard_flag = hard_flag
 
@@ -525,29 +517,33 @@ class SubGit():
         """
         has_dirty_repos = False
         good_repos = []
-        repos_dict = self._get_repos("delete", repo_names)
+        repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
         active_repos = repos_dict["active_repos"]
+        repo_choices = repos_dict["repo_choices"]
         repo_paths = self._get_working_repos(repos, active_repos)
 
         if not repo_paths:
             return 1
 
-        for path in repo_paths:
-            current_repo = Repo(path)
-            repo_name = basename(path)
+        answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'?")
 
-            if self._check_remote(current_repo):
-                has_dirty_repos = True
-                log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
-            else:
-                good_repos.append(path)
+        if answer:
+            for path in repo_paths:
+                current_repo = Repo(path)
+                repo_name = basename(path)
 
-        if not has_dirty_repos:
-            for repo in good_repos:
-                repo_name = basename(repo)
-                shutil.rmtree(repo)
-                log.info(f"Successfully removed repo: {repo_name}")
+                if self._check_remote(current_repo):
+                    has_dirty_repos = True
+                    log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+                else:
+                    good_repos.append(path)
+
+            if not has_dirty_repos:
+                for repo in good_repos:
+                    repo_name = basename(repo)
+                    shutil.rmtree(repo)
+                    log.info(f"Successfully removed repo: {repo_name}")
 
     def reset(self, repo_names=None):
         """
@@ -555,58 +551,57 @@ class SubGit():
         to the same state they were when they were first pulled.
         """
         dirty_repos = []
-        repos_dict = self._get_repos("reset", repo_names)
+        repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
         active_repos = repos_dict["active_repos"]
+        repo_choices = repos_dict["repo_choices"]
         repo_paths = self._get_working_repos(repos, active_repos)
 
         if not repo_paths:
             return 1
 
-        for path in repo_paths:
-            current_repo = Repo(path)
-            repo_name = basename(path)
+        answer = self.yes_no(f"Are you sure you want to reset the following repos '{repo_choices}'?")
 
-            if self._check_remote(current_repo):
-                dirty_repos.append(path)
-            else:
-                log.info(f"{repo_name} is clean")
+        if answer:
+            for path in repo_paths:
+                current_repo = Repo(path)
+                repo_name = basename(path)
 
-        if not dirty_repos:
-            log.error("No repos found to reset. Exiting...")
-            return 1
+                if self._check_remote(current_repo):
+                    dirty_repos.append(path)
+                else:
+                    log.info(f"{repo_name} is clean")
 
-        # Resets repo back to the latest remote commit.
-        # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
-        for repo in dirty_repos:
-            repo_to_reset = Repo(repo)
-            repo_name = basename(repo)
-            flag = "--hard" if self.hard_flag else None
-            repo_to_reset.git.reset(flag)
-            log.info(f"Successfully reset {repo_name}")
+            if not dirty_repos:
+                log.error("No repos found to reset. Exiting...")
+                return 1
 
-        return 0
+            # Resets repo back to the latest remote commit.
+            # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
+            for repo in dirty_repos:
+                repo_to_reset = Repo(repo)
+                repo_name = basename(repo)
+                flag = "--hard" if self.hard_flag else None
+                repo_to_reset.git.reset(flag)
+                log.info(f"Successfully reset {repo_name}")
+
+            return 0
 
     def clean(self, repo_names=None, recurse_into_dir=None, force=None, dry_run=None):
         """
-        Method to look through a list of repos and remove untracked files:
-        With -r flag set, 'subgit clean' will recusively remove directories
-        With -f flag set, 'subgit clean' will remove untracked files, but leave directories unless -r is set
-        With -n, or --dry-run set, 'subgit clean' will only show what files would be deleted
+        Method to look through a list of repos and remove untracked files
         """
         dirty_repos = []
-        flags = "-" + ("d" if recurse_into_dir else "") + ("f" if force else "") + ("n" if dry_run else "") 
-        repos_dict = self._get_repos("clean", repo_names)
+        recursive_flag = ("d" if recurse_into_dir else "")
+        force_flag = ("f" if force else "")
+        dry_run_flag = ("n" if dry_run else "")
+        flags = f"-{recursive_flag}{force_flag}{dry_run_flag}"
+        repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
         active_repos = repos_dict["active_repos"]
         repo_paths = self._get_working_repos(repos, active_repos)
-        
-        if not recurse_into_dir and not force and not dry_run:
-            log.error("Using 'subgit clean' without any flag (-r, --force, --dry-run) set, will not complete any action")
-            return 1
 
         if not repo_paths:
-            log.error("Error")
             return 1
 
         for path in repo_paths:
@@ -637,7 +632,7 @@ class SubGit():
 
         return 0
 
-    def _get_repos(self, command, repos=None):
+    def _get_repos(self, repos=None):
         """
         Method takes zero or one repo name as argument.
 
@@ -658,19 +653,13 @@ class SubGit():
         if isinstance(repos, list):
             repo_choices = ", ".join(repos)
 
-        return_value = {
+        working_repos = {
             "active_repos": active_repos,
-            "repos": repos
+            "repos": repos,
+            "repo_choices": repo_choices
         }
 
-        if command == "clean":
-            return return_value
-
-        answer = self.yes_no(f"Are you sure you want to {command} the following repos '{repo_choices}'?")
-
-        if answer:
-            return return_value
-
+        return working_repos
 
     def _check_remote(self, repo):
         """
@@ -704,7 +693,12 @@ class SubGit():
 
     def _get_working_repos(self, repos, active_repos):
         """
-        Helper method for 'subgit delete', 'subgit reset' and 'subgit clean'
+        Method to return two lists of repos.
+        One that contains the names of the repos specified in subgit command.
+        One that contains all repos listed in the working subgit config file.
+        
+        Example purpose is to easier check if the repo(s) specified in the subgit command,
+        exists in the subgit config file. etc.
         """
         repo_paths = []
         in_conf_file = True
