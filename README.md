@@ -131,9 +131,7 @@ subgit import github <YOUR_USERNAME> -o .some-other-file.yml
 
 ## Reset changed repos
 
-You can reset repos in which changes have been made such as new files or new commits using `subgit reset` command. Using no particular option, `subgit reset` will reset your repo to the latest pushed commit. I will compare your working directory to that of the remote. If there are no changes, it will simply tell you that the current repo is clean. If there are any untracked files (files that are not added or commited) the '--hard' flag has to be appended to the command in order to force a reset.
-
-The reset command supports the selection of either all repos or a subset of repos.
+You can reset repos in which changes have been made such as new files or new commits using `subgit reset` command. Using no particular option, `subgit reset` will reset the index to the origin pointer/reference. I will compare your working directory to that of the remote. If there are no changes, it will simply tell you that the current repo is clean. If there are any untracked files (files that are not added or commited) the '--hard' flag has to be appended to the command in order to force a reset.
 
 ```bash
 # Reset all repos in sequence if they are dirty
@@ -143,14 +141,22 @@ subgit reset
 subgit reset pykwalify
 ```
 
-## Development
+## Clean changed repos
 
-Create a virtualenv (venv) on your system.
-
-Install all runtime dependencies, test dependencies, development dependencies and the package in local editable mode with
+With 'subgit clean' you can clean a repo from dirty files if 'subgit reset' hasn't done the job. By using 'subgit clean' you have a variety of options. Either use '--force' flag to only delete untracked files, without recursively removing untracked directories. Or append the '-d' flag in addition to '--force' to also remove directories. There is also a '--dry-run' flag that only shows you what would be removed, if the command was successfully executed.
 
 ```bash
-pip install -e ".[dev,test]"
+# Clean all dirty repos from untracked files in sequence. (Skips directories)
+subgit clean --force
+
+# Clean all dirty repos from untracked files and directories.
+subgit clean --force -d
+
+# Cleans 'pykwalify' if it it dirty
+subgit clean pykwalify --force -d
+
+# Shows only what would be done if run successfully
+subgit clean pykwalify --force -d --dry-run
 ```
 
 Create a new git branch from the `master` branch and commit all changes you want to contribute in there. After your work is complete submit a Merge Request on gitlab back to the `master` branch. Ask a collegue for review and approval of the changes. Also if you are not he maintainer or your reviewer is not the maintainer, it is always good to ping and ask that person as well before mergin big changes. Smaller changes or fixes do not require this, but it is always encouraged to do this for all MR:s.
