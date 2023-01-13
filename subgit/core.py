@@ -76,7 +76,7 @@ class SubGit():
 
     def _get_config_file(self):
         if not os.path.exists(self.subgit_config_file_path):
-            log.error("No .subgit.yml file exists in current CWD")
+            log.error(f"No {self.subgit_config_file_path} file exists in current CWD")
             sys.exit(1)
 
         with open(self.subgit_config_file_path, "r") as stream:
