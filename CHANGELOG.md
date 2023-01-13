@@ -2,29 +2,25 @@
 
 ## Prelude
 
-Added new features and commands, such as:
+Added new features and commands:
 
 - 'subgit delete'
 - 'subgit import'
 - 'subgit reset'
 - 'subgit clean'
 
-## General fixes
+## Fixes
 
-- Added error handling for 'subgit pull'.
-	- If subgit config file has a repo with `branch: `, the command exits
+- Added additional error handling for 'subgit pull' that checks if subgit config file has a repo with empty branch: `branch: `. If so, command fails.
 
-- Implemented multiprocessing for 'subgit fetch' commnand. [#41][https://github.com/dynamist/subgit/pull/41]
+- Implemented multiprocessing for 'subgit fetch' commnand. [#41](https://github.com/dynamist/subgit/pull/41)
+
+- Added mailmap to repo. [#38](https://github.com/dynamist/subgit/pull/38)
 
 ## New features
 
-* [#42][https://github.com/dynamist/subgit/pull/42] - Added function to render all repos from a github/gitlab user account/organisation
-* [#41][https://github.com/dynamist/subgit/pull/41] - Implemented multiprocessing to 'subgit fetch' command
-* [#37][https://github.com/dynamist/subgit/pull/37] - Added '--conf' flag to use optional file name for subgit config
-* [#36][https://github.com/dynamist/subgit/pull/36] - Added 'subgit delete' command
-
-## Other notes
-
-* [#38][https://github.com/dynamist/subgit/pull/38] - Added a mailmap to repo
+* [#42](https://github.com/dynamist/subgit/pull/42) - Added function to write all repos from a github/gitlab user account/organisation to config file
+* [#37](https://github.com/dynamist/subgit/pull/37) - Added '--conf' flag to use optional file name for subgit config
+* [#36](https://github.com/dynamist/subgit/pull/36) - Added 'subgit delete' command
 
 # 0.5.0
