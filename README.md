@@ -240,13 +240,13 @@ Finally you should create the git tag for the git commit that you built. Run `gi
 
 |   |   |
 |---|---|
-| python support         | 3.8, 3.9, 3.10 |
+| python support         | 3.8, 3.9, 3.10, 3.11 |
 | Source code            | https://github.com/dynamist/subgit |
 | Changelog              | https://github.com/dynamist/subgit/blob/master/CHANGELOG.md |
 | Issues                 | https://github.com/dynamist/subgit/issues |
 | Projects page          | https://github.com/dynamist/subgit/projects/1
 | pypi                   | https://pypi.python.org/pypi/subgit/ |
 | License                | `Apache-2.0` https://github.com/dynamist/subgit/blob/master/LICENSE |
-| Copyright              | `Copyright (c) 2019-2021 Dynamist AB` |
+| Copyright              | `Copyright (c) 2019-2023 Dynamist AB` |
 | git repo               | `git@github.com:dynamist/subgit.git` |
 | install stable         | `pip install subgit` |
