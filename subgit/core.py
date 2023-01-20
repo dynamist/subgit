@@ -4,10 +4,10 @@
 import logging
 import os
 import re
-import sys
 import shutil
+import sys
 from multiprocessing import Pool
-from os.path import basename
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 # subgit imports
@@ -28,31 +28,45 @@ log = logging.getLogger(__name__)
 
 
 class SubGit():
-    def __init__(self, config_file_path=None, answer_yes=False, hard_flag=False):
+
+    def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
-        self.hard_flag = hard_flag
 
         if not config_file_path:
-            # First attempt the old filename
-            self.subgit_config_file_name = ".sgit.yml"
-            self.subgit_config_file_path = os.path.join(
-                os.getcwd(),
-                self.subgit_config_file_name,
-            )
+            # Get the CWD where you execute the script from
+            path = Path().cwd()
 
-            if os.path.exists(self.subgit_config_file_path):
-                log.warning("WARNING: using filename .sgit.yml will be deprecated in the future. Please convert it to .subgit.yml")
+            while True:
+                # Try to find the old config filename
+                self.subgit_config_file_name = ".sgit.yml"
+                self.subgit_config_file_path = path / self.subgit_config_file_name
 
-            # If old file do not exists then fallback to new filename
-            if not os.path.exists(self.subgit_config_file_path):
+                if self.subgit_config_file_path.exists():
+                    log.warning("WARNING: using filename .sgit.yml will be deprecated in the future. Please convert it to .subgit.yml")
+                    break
+
+                # If old file do not exists then try the new filename
                 self.subgit_config_file_name = ".subgit.yml"
-                self.subgit_config_file_path = os.path.join(
-                    os.getcwd(),
-                    self.subgit_config_file_name,
-                )
+                self.subgit_config_file_path = path / self.subgit_config_file_name
+
+                if self.subgit_config_file_path.exists():
+                    break
+
+                # If we reach root folder then we should abort out
+                if path == Path("/"):
+                    log.critical("Unable to find a config file in any directory...")
+                    sys.exit(1)
+
+                path = path.parent.absolute()
+                os.chdir(path)
+                log.debug(f"Next iteration... Updated cwd path to {path}")
+
+            log.info(f"Found config file...{self.subgit_config_file_path}")
+            log.debug(self.subgit_config_file_name)
+            log.debug(self.subgit_config_file_path)
         else:
-            self.subgit_config_file_name = os.path.basename(config_file_path)
-            self.subgit_config_file_path = config_file_path
+            self.subgit_config_file_name = Path(config_file_path).name
+            self.subgit_config_file_path = Path(config_file_path).resolve()
 
     def init_repo(self, repo_name=None, repo_url=None):
         """
@@ -60,7 +74,7 @@ class SubGit():
         .subgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
         """
-        if os.path.exists(self.subgit_config_file_path):
+        if self.subgit_config_file_path.exists():
             log.error(f"File '{self.subgit_config_file_name}' already exists on disk")
             return 1
 
@@ -75,12 +89,15 @@ class SubGit():
             log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
 
     def _get_config_file(self):
-        if not os.path.exists(self.subgit_config_file_path):
+        if not self.subgit_config_file_path.exists():
             log.error(f"No {self.subgit_config_file_path} file exists in current CWD")
             sys.exit(1)
 
         with open(self.subgit_config_file_path, "r") as stream:
-            return yaml.load(stream, Loader=yaml.Loader)
+            return yaml.load(
+                stream,
+                Loader=yaml.Loader,
+            )
             # TODO: Minimal required data should be 'repos:'
             #       Raise error if missing from loaded config
 
@@ -90,7 +107,12 @@ class SubGit():
         in the method constructor.
         """
         with open(self.subgit_config_file_path, "w") as stream:
-            yaml.dump(config_data, stream, indent=2, default_flow_style=False)
+            yaml.dump(
+                config_data,
+                stream,
+                indent=2,
+                default_flow_style=False,
+            )
 
     def repo_status(self):
         config = self._get_config_file()
@@ -104,7 +126,7 @@ class SubGit():
             print(f"{repo_name}")
             print(f"  Url: {repo_data.get('url', 'NOT SET')}")
 
-            repo_disk_path = os.path.join(os.getcwd(), repo_name)
+            repo_disk_path = Path().cwd() / repo_name
             print(f"  Disk path: {repo_disk_path}")
 
             try:
@@ -116,11 +138,16 @@ class SubGit():
             print(f"  Cloned: {'Yes' if cloned_to_disk else 'No'}")
 
             if cloned_to_disk:
-                file_cwd = os.path.join(os.getcwd(), repo_name, ".git/FETCH_HEAD")
+                file_cwd = Path().cwd() / repo_name / ".git/FETCH_HEAD"
 
-                if os.path.exists(file_cwd):
+                if file_cwd.exists():
                     command = f"stat -c %y {file_cwd}"
-                    process = Popen(command, stdout=PIPE, stderr=None, shell=True)
+                    process = Popen(
+                        command,
+                        stdout=PIPE,
+                        stderr=None,
+                        shell=True,
+                    )
                     output, stderr = process.communicate()
                     parsed_output = str(output).replace('\\n', '')
                     print(f"  Last pull/fetch: {parsed_output}")
@@ -143,18 +170,26 @@ class SubGit():
 
             print(f"    branch: {branch}")
             if branch != "---":
-                if branch in repo.heads:
-                    commit_hash = str(repo.heads[branch].commit)
-                    commit_message = str(repo.heads[branch].commit.summary)
-                    has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                if cloned_to_disk:
+                    if branch in repo.heads:
+                        commit_hash = str(repo.heads[branch].commit)
+                        commit_message = str(repo.heads[branch].commit.summary)
+                        has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                        is_in_origin = f"{branch in repo.remotes.origin.refs}"
+                    else:
+                        commit_hash = "Local branch not found"
+                        commit_message = "Local branch not found"
+                        has_new = "---"
+                        is_in_origin = "Local branch not found"
                 else:
-                    commit_hash = "Local branch not found"
-                    commit_message = "Local branch not found"
-                    has_new = "---"
+                    commit_hash = "Repo not cloned to disk"
+                    commit_message = "Repo not cloned to disk"
+                    has_new = "Repo not cloned to disk"
+                    is_in_origin = "Repo not cloned to disk"
 
                 print(f"      commit hash: {commit_hash}")
                 print(f"      commit message: '{commit_message}'")
-                print(f"      branch exists in origin? {branch in repo.remotes.origin.refs}")
+                print(f"      branch exists in origin? {is_in_origin}")
                 print(f"      has newer commit in origin? {has_new}")
 
             print(f"    commit: {commit}")
@@ -172,12 +207,16 @@ class SubGit():
             print(f"    tag: {tag}")
 
             if tag != "---":
-                if tag in repo.tags:
-                    commit_hash = str(repo.tags[tag].commit)
-                    commit_summary = str(repo.tags[tag].commit.summary)
+                if cloned_to_disk:
+                    if tag in repo.tags:
+                        commit_hash = str(repo.tags[tag].commit)
+                        commit_summary = str(repo.tags[tag].commit.summary)
+                    else:
+                        commit_hash = "Tag not found"
+                        commit_summary = "---"
                 else:
-                    commit_hash = "Tag not found"
-                    commit_summary = "---"
+                    commit_hash = "Repo not cloned to disk"
+                    commit_summary = "Repo not cloned to disk"
 
                 print(f"      commit hash: {commit_hash}")
                 print(f"      commit message: '{commit_summary}'")
@@ -232,7 +271,7 @@ class SubGit():
 
         for repo_name in repos_to_fetch:
             try:
-                repo_path = os.path.join(os.getcwd(), repo_name)
+                repo_path = Path().cwd() / repo_name
                 git_repo = Repo(repo_path)
             except git.exc.NoSuchPathError:
                 log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
@@ -248,7 +287,7 @@ class SubGit():
         return 0
 
     def fetch_repo(self, repo_name):
-        repo_path = os.path.join(os.getcwd(), repo_name)
+        repo_path = Path().cwd() / repo_name
         git_repo = Repo(repo_path)
 
         log.info(f"Fetching git repo '{repo_name}'")
@@ -322,10 +361,10 @@ class SubGit():
         has_dirty = False
 
         for name in repos:
-            repo_path = os.path.join(os.getcwd(), name)
+            repo_path = Path().cwd() / name
 
             # If the path do not exists then the repo can't be dirty
-            if not os.path.exists(repo_path):
+            if not repo_path.exists():
                 continue
 
             repo = Repo(repo_path)
@@ -365,11 +404,11 @@ class SubGit():
         for name in repos:
             log.info("")
 
-            repo_path = os.path.join(os.getcwd(), name)
+            repo_path = Path().cwd() / name
             repo_config = config["repos"][name]
             revision = repo_config["revision"]
 
-            if not os.path.exists(repo_path):
+            if not repo_path.exists():
                 clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
                 clone_url = repo_config.get("url", None)
 
@@ -391,9 +430,9 @@ class SubGit():
             log.debug(f"TODO: Parse for any changes...")
             # TODO: Check that origin remote exists
 
-            repo = Repo(os.path.join(os.getcwd(), name))
-
-            g = Git(os.path.join(os.getcwd(), name))
+            p = Path().cwd() / name
+            repo = Repo(p)
+            g = Git(p)
 
             # Fetch all changes from upstream git repo
             repo.remotes.origin.fetch()
@@ -531,21 +570,19 @@ class SubGit():
         if answer:
             for path in repo_paths:
                 current_repo = Repo(path)
-                repo_name = basename(path)
 
                 if self._check_remote(current_repo):
                     has_dirty_repos = True
-                    log.critical(f"'{repo_name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+                    log.critical(f"'{path.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
                 else:
                     good_repos.append(path)
 
             if not has_dirty_repos:
                 for repo in good_repos:
-                    repo_name = basename(repo)
                     shutil.rmtree(repo)
-                    log.info(f"Successfully removed repo: {repo_name}")
+                    log.info(f"Successfully removed repo: {path.name}")
 
-    def reset(self, repo_names=None):
+    def reset(self, repo_names=None, hard_flag=None):
         """
         Will take a list of repos and find any diffs and reset them back
         to the same state they were when they were first pulled.
@@ -565,12 +602,11 @@ class SubGit():
         if answer:
             for path in repo_paths:
                 current_repo = Repo(path)
-                repo_name = basename(path)
 
                 if self._check_remote(current_repo):
                     dirty_repos.append(path)
                 else:
-                    log.info(f"{repo_name} is clean")
+                    log.info(f"{repo.name} is clean")
 
             if not dirty_repos:
                 log.error("No repos found to reset. Exiting...")
@@ -580,10 +616,9 @@ class SubGit():
             # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
             for repo in dirty_repos:
                 repo_to_reset = Repo(repo)
-                repo_name = basename(repo)
-                flag = "--hard" if self.hard_flag else None
+                flag = "--hard" if hard_flag else None
                 repo_to_reset.git.reset(flag)
-                log.info(f"Successfully reset {repo_name}")
+                log.info(f"Successfully reset {repo.name}")
 
             return 0
 
@@ -592,9 +627,9 @@ class SubGit():
         Method to look through a list of repos and remove untracked files
         """
         dirty_repos = []
-        recursive_flag = ("d" if recurse_into_dir else "")
-        force_flag = ("f" if force else "")
-        dry_run_flag = ("n" if dry_run else "")
+        recursive_flag = "d" if recurse_into_dir else ""
+        force_flag = "f" if force else ""
+        dry_run_flag = "n" if dry_run else ""
         flags = f"-{recursive_flag}{force_flag}{dry_run_flag}"
         repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
@@ -606,7 +641,6 @@ class SubGit():
 
         for path in repo_paths:
             current_repo = Repo(path)
-            repo_name = basename(path)
 
             if self._check_remote(current_repo):
                 dirty_repos.append(path)
@@ -706,7 +740,7 @@ class SubGit():
         valid_repos = True
 
         for repo in repos:
-            repo_paths.append(os.path.join(os.getcwd(), repo))
+            repo_paths.append(Path().cwd() / repo)
 
             if repo not in active_repos:
                 log.critical(f"'{repo}' does not exist in {self.subgit_config_file_name} config file.")
@@ -716,9 +750,9 @@ class SubGit():
             return False
 
         for path in repo_paths:
-            repo_name = basename(path)
+            repo_name = path.name
 
-            if not os.path.exists(path):
+            if not path.exists():
                 log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
                 bad_path.append(path)
 
@@ -730,10 +764,8 @@ class SubGit():
             return False
 
         for path in repo_paths:
-            repo_name = basename(path)
-
             if not self._is_valid_repo(path):
-                log.critical(f"'{repo_name}' is not a git repo")
+                log.critical(f"'{path.name}' is not a git repo")
                 valid_repos = False
 
         if not valid_repos:

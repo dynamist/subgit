@@ -149,7 +149,9 @@ Options:
 
 
 def parse_cli():
-    """Parse the CLI arguments and options."""
+    """
+    Parse the CLI arguments and options
+    """
     import subgit
 
     try:
@@ -222,20 +224,24 @@ def run(cli_args, sub_args):
     core = SubGit(
         config_file_path=sub_args.get("--conf"),
         answer_yes=sub_args.get("--yes"),
-        hard_flag=sub_args.get("--hard")
     )
 
     if cli_args["<command>"] == "fetch":
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.fetch(repos)
+        retcode = core.fetch(
+            repos,
+        )
 
     if cli_args["<command>"] == "init":
         repo_name = sub_args["<name>"]
         repo_url = sub_args["<url>"]
 
-        retcode = core.init_repo(repo_name, repo_url)
+        retcode = core.init_repo(
+            repo_name,
+            repo_url,
+        )
 
     if cli_args["<command>"] == "pull":
         repos = sub_args["<repo>"]
@@ -250,19 +256,25 @@ def run(cli_args, sub_args):
         repos = sub_args["<repo>"]
         repos = repos or None
 
-        retcode = core.delete(repo_names=repos)
+        retcode = core.delete(
+            repo_names=repos,
+        )
 
     if cli_args["<command>"] == "reset":
         repos = sub_args["<repo>"]
         repos = repos or None
+        hard_flag = sub_args.get("--hard")
 
-        retcode = core.reset(repo_names=repos)
+        retcode = core.reset(
+            repo_names=repos,
+            hard_flag=hard_flag,
+        )
 
     if cli_args["<command>"] == "import":
         git_importer = GitImport(
             config_file_name=sub_args.get("--output-file"), 
             answer_yes=sub_args["--yes"],
-            is_archived=sub_args.get("--archived")
+            is_archived=sub_args.get("--archived"),
         )
         github = sub_args["github"]
         gitlab = sub_args["gitlab"]
@@ -282,14 +294,16 @@ def run(cli_args, sub_args):
             repo_names=repos, 
             recurse_into_dir=sub_args.get("-d"),
             force=sub_args.get("--force"),
-            dry_run=sub_args.get("--dry-run")
+            dry_run=sub_args.get("--dry-run"),
         )
 
     return retcode
 
 
 def cli_entrypoint():
-    """Used by setup.py to create a cli entrypoint script."""
+    """
+    Used by setup.py to create a cli entrypoint script
+    """
     try:
         cli_args, sub_args = parse_cli()
         exit_code = run(cli_args, sub_args)
@@ -300,8 +314,10 @@ def cli_entrypoint():
         if "DEBUG" in os.environ:
             extype, value, tb = sys.exc_info()
             traceback.print_exc()
+
             if "PDB" in os.environ:
                 pdb.post_mortem(tb)
+
             raise
         else:
             print(f"Exception type : {ex_type.__name__}")

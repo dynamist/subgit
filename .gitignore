@@ -138,3 +138,5 @@ bare/
 
 # Pycharm
 .idea/*
+code/
+_manifest/
