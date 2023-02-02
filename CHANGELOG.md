@@ -1,3 +1,10 @@
+# 0.6.1 (2023-02-02)
+
+## Fixes
+
+- Add missing python package `subgit.importer` to built wheels and sdist packages
+
+
 # 0.6.0 (2023-01-13)
 
 ## Prelude
