@@ -31,8 +31,20 @@ class SubGit():
 
     def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
+        self.config_file_path = config_file_path
 
-        if not config_file_path:
+        if config_file_path:
+            self.subgit_config_file_name = Path(config_file_path).name
+            self.subgit_config_file_path = Path(config_file_path).resolve()
+        else:
+            self.subgit_config_file_name = ".subgit.yml"
+            self.subgit_config_file_path = Path.cwd() / ".subgit.yml"
+    
+    def _get_recursive_config_path(self):
+        """
+        Looks for either .sgit.yml or .subgit.yml recursively
+        """
+        if not self.config_file_path:
             # Get the CWD where you execute the script from
             path = Path().cwd()
 
@@ -65,8 +77,8 @@ class SubGit():
             log.debug(self.subgit_config_file_name)
             log.debug(self.subgit_config_file_path)
         else:
-            self.subgit_config_file_name = Path(config_file_path).name
-            self.subgit_config_file_path = Path(config_file_path).resolve()
+            self.subgit_config_file_name = Path(self.config_file_path).name
+            self.subgit_config_file_path = Path(self.config_file_path).resolve()
 
     def init_repo(self, repo_name=None, repo_url=None):
         """
@@ -74,6 +86,7 @@ class SubGit():
         .subgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
         """
+
         if self.subgit_config_file_path.exists():
             log.error(f"File '{self.subgit_config_file_name}' already exists on disk")
             return 1
@@ -115,6 +128,7 @@ class SubGit():
             )
 
     def repo_status(self):
+        self._get_recursive_config_path()
         config = self._get_config_file()
         repos = config.get("repos", {})
 
@@ -244,6 +258,8 @@ class SubGit():
 
         A empty list of items will not fetch any repo.
         """
+        self._get_recursive_config_path()
+
         log.debug(f"repo fetch input - {repos}")
 
         config = self._get_config_file()
@@ -315,6 +331,8 @@ class SubGit():
 
         To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
         """
+        self._get_recursive_config_path()
+
         log.debug(f"Repo pull - {names}")
 
         config = self._get_config_file()
@@ -554,6 +572,7 @@ class SubGit():
         more of them creates a conflict. (e.g repo(s) is not in the config file,
         path(s) is not to a valid git repo or repo(s) is dirty)
         """
+        self._get_recursive_config_path()
         has_dirty_repos = False
         good_repos = []
         repos_dict = self._get_repos(repo_names)
@@ -587,6 +606,7 @@ class SubGit():
         Will take a list of repos and find any diffs and reset them back
         to the same state they were when they were first pulled.
         """
+        self._get_recursive_config_path()
         dirty_repos = []
         repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
@@ -626,6 +646,7 @@ class SubGit():
         """
         Method to look through a list of repos and remove untracked files
         """
+        self._get_recursive_config_path()
         dirty_repos = []
         recursive_flag = "d" if recurse_into_dir else ""
         force_flag = "f" if force else ""
