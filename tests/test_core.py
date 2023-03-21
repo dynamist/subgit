@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # python std lib
+import json
 import os
 
 # subgit imports
@@ -72,7 +73,8 @@ def test_init_repo(subgit):
 
 
 def test_init_repo_file_exists(subgit):
-    subgit.subgit_config_file_path.write("foobar")
+    with subgit.subgit_config_file_path.open(mode="w") as file:
+        file.write("foobar")
 
     retcode = subgit.init_repo()
 
@@ -162,8 +164,10 @@ def test_repo_pull_all(subgit, mocker, monkeypatch):
     monkeypatch.setattr(Repo, "clone_from", mock_clone)
 
     # Update 'all' should return SubGitException with faulty input
-    data = {"repos": {"broken-url": user_data().get("broken-url")}}
-    subgit.subgit_config_file_path.write(data)
+    data = json.dumps({"repos": {"broken-url": user_data().get("broken-url")}}, indent=2)
+
+    with subgit.subgit_config_file_path.open(mode="w") as file:
+        file.write(data)
 
     with pytest.raises(SubGitConfigException) as pytest_wrapped_e:
         subgit.pull("all")
