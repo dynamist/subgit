@@ -453,7 +453,7 @@ class SubGit():
             g = Git(p)
 
             # Fetch all changes from upstream git repo
-            repo.remotes.origin.fetch()
+            repo.remotes.origin.pull()
 
             # How to handle the repo when a branch is specified
             if "branch" in revision:
