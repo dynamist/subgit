@@ -426,9 +426,13 @@ class SubGit():
             repo_config = config["repos"][name]
             revision = repo_config["revision"]
 
+            # Boolean value wether repo is newly cloned.
+            cloned = False
+
             if not repo_path.exists():
                 clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
                 clone_url = repo_config.get("url", None)
+                cloned = True
 
                 if not clone_url:
                     raise SubGitConfigException(f"Missing required key 'url' on repo '{name}'")
@@ -453,7 +457,7 @@ class SubGit():
             g = Git(p)
 
             # Fetch all changes from upstream git repo
-            repo.remotes.origin.pull()
+            repo.remotes.origin.fetch()
 
             # How to handle the repo when a branch is specified
             if "branch" in revision:
@@ -461,6 +465,16 @@ class SubGit():
 
                 # Extract the sub tag data
                 branch_revision = revision["branch"]
+
+                if not cloned:
+                    try:
+                        latest_remote_sha = str(repo.rev_parse(f"origin/{branch_revision}"))
+                        latest_local_sha = str(repo.head.commit.hexsha)
+
+                        if latest_remote_sha != latest_local_sha:
+                            repo.remotes.origin.pull()
+                    except git.exc.BadName as er:
+                        log.error(er)
 
                 # Ensure the local version of the branch exists and points to the origin ref for that branch
                 repo.create_head(f"{branch_revision}", f"origin/{branch_revision}")
