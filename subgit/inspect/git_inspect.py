@@ -12,11 +12,13 @@ from subgit.core import SubGit
 # 3rd party imports
 from ruamel import yaml
 
+import pysnooper
+
 
 log = logging.getLogger(__name__)
 
 
-class GitImport(SubGit):
+class GitInspect(SubGit):
     def __init__(self, config_file_name=None, answer_yes=None, is_archived=False):
         self.answer_yes = answer_yes
         self.is_archived = is_archived
@@ -56,7 +58,8 @@ class GitImport(SubGit):
 
         return True
 
-    def import_github(self, owner):
+    @pysnooper.snoop()
+    def inspect_github(self, owner):
         """
         Given a username or organisation name, this method lists all repos connected to it
         on github and writes a subgit config file.
@@ -97,7 +100,7 @@ class GitImport(SubGit):
             answer = self.yes_no(f"File: {self.subgit_config_file_path} already exists on disk, do you want to overwrite the file?")
 
             if not answer:
-                log.error("Aborting import")
+                log.error("Aborting inspection")
                 return 1
 
         for repo_name in sorted_names:
@@ -124,7 +127,7 @@ class GitImport(SubGit):
         log.info(f"Successfully wrote to file: {self.subgit_config_file_name}")
         return 0
 
-    def import_gitlab(self, owner):
+    def inspect_gitlab(self, owner):
         """
         Given a username or organisation name, this method lists all repos connected to it
         on gitlab and writes a subgit config file.
@@ -167,7 +170,7 @@ class GitImport(SubGit):
             answer = self.yes_no(f"File: {self.subgit_config_file_path} already exists on disk, do you want to overwrite the file?")
 
             if not answer:
-                log.error("Aborting import")
+                log.error("Aborting inspection")
                 return 1
 
         for repo_name in sorted_names:

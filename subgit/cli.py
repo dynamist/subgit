@@ -20,7 +20,7 @@ Commands:
     pull     Update one or all Git repos
     status   Show status of each configured repo
     delete   Delete one or more local Git repos
-    import   import repos from github or gitlab and creates a config file
+    inspect  Listing repos from github or gitlab
     reset    Reset repo(s) previous tracked state
     clean    Clean repo(s) from untracked files
 
@@ -107,13 +107,13 @@ Options:
 """
 
 
-sub_import_args = """
+sub_inspect_args = """
 Usage:
-    subgit import (github | gitlab) <owner> [options]
+    subgit inspect (github | gitlab) <owner> [options]
 
 Options:
     -y, --yes                                Answers yes to all questions (use with caution)
-    -o <filename>, --output-file <filename>  Used to specify output filename
+    -o <filename>, --output-file <filename>  Used if inspect output should be directed to a .subgit.yml file
     -a, --archived                           Writes only archived repos to output file
     -h, --help                               Show this help message and exit
 
@@ -185,8 +185,8 @@ def parse_cli():
         sub_args = docopt(sub_status_args, argv=argv)
     elif cli_args["<command>"] == "delete":
         sub_args = docopt(sub_delete_args, argv=argv)
-    elif cli_args["<command>"] == "import":
-        sub_args = docopt(sub_import_args, argv=argv)
+    elif cli_args["<command>"] == "inspect":
+        sub_args = docopt(sub_inspect_args, argv=argv)
     elif cli_args["<command>"] == "reset":
         sub_args = docopt(sub_reset_args, argv=argv)
     elif cli_args["<command>"] == "clean":
@@ -219,7 +219,7 @@ def run(cli_args, sub_args):
     log.debug(sub_args)
 
     from subgit.core import SubGit
-    from subgit.importer.git_importer import GitImport
+    from subgit.inspect.git_inspect import GitInspect
 
     core = SubGit(
         config_file_path=sub_args.get("--conf"),
@@ -270,8 +270,8 @@ def run(cli_args, sub_args):
             hard_flag=hard_flag,
         )
 
-    if cli_args["<command>"] == "import":
-        git_importer = GitImport(
+    if cli_args["<command>"] == "inspect":
+        git_inspect = GitInspect(
             config_file_name=sub_args.get("--output-file"), 
             answer_yes=sub_args["--yes"],
             is_archived=sub_args.get("--archived"),
@@ -281,10 +281,10 @@ def run(cli_args, sub_args):
         owner = sub_args["<owner>"]
         
         if github:
-            retcode = git_importer.import_github(owner)
+            retcode = git_inspect.inspect_github(owner)
         
         if gitlab:
-            retcode = git_importer.import_gitlab(owner)
+            retcode = git_inspect.inspect_gitlab(owner)
 
     if cli_args["<command>"] == "clean":
         repos = sub_args["<repo>"]
