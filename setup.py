@@ -14,7 +14,7 @@ setup(
     maintainer="Johan Andersson",
     maintainer_email="johan@dynamist.se",
     license="Apache License 2.0",
-    packages=["subgit", "subgit.importer"],
+    packages=["subgit", "subgit.inspect"],
     url="http://github.com/dynamist/sgit",
     entry_points={
         "console_scripts": [
