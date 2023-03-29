@@ -97,9 +97,8 @@ class SubGit():
             log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
             tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
 
-        with open(self.subgit_config_file_path, "w") as stream:
-            self._dump_config_file(tmp_config)
-            log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
+        self._dump_config_file(tmp_config)
+        log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
 
     def _get_config_file(self):
         if not self.subgit_config_file_path.exists():
@@ -133,7 +132,7 @@ class SubGit():
         repos = config.get("repos", {})
 
         if not repos:
-            print(f"  No repos found")
+            print("  No repos found")
             return 1
 
         for repo_name, repo_data in repos.items():
@@ -166,21 +165,21 @@ class SubGit():
                     parsed_output = str(output).replace('\\n', '')
                     print(f"  Last pull/fetch: {parsed_output}")
                 else:
-                    print(f"  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
+                    print("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
             else:
-                print(f"  Last pull/fetch: UNKNOWN repo not cloned to disk")
+                print("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
             if cloned_to_disk:
                 repo = Repo(repo_disk_path)
                 print(f"  Repo is dirty? {'Yes' if repo.is_dirty() else 'No'}")
             else:
-                print(f"  Repo is dirty? ---")
+                print("  Repo is dirty? ---")
 
             branch = repo_data['revision'].get('branch', '---')
             commit = repo_data['revision'].get('commit', '---')
             tag = repo_data['revision'].get('tag', '---')
 
-            print(f"  Revision:")
+            print("  Revision:")
 
             print(f"    branch: {branch}")
             if branch != "---":
@@ -208,7 +207,7 @@ class SubGit():
 
             print(f"    commit: {commit}")
             if commit != "---":
-                print(f"FIXME: Not implemented yet")
+                print("FIXME: Not implemented yet")
 
             # Extract tag from inner value if that is set
             #  {revision: {tag: {select: {value: foo}}}}
@@ -235,13 +234,13 @@ class SubGit():
                 print(f"      commit hash: {commit_hash}")
                 print(f"      commit message: '{commit_summary}'")
 
-            print(f"")
+            print("")
 
     def yes_no(self, question):
         print(question)
 
         if self.answer_yes:
-            log.info(f"--yes flag set, automatically answer yes to question")
+            log.info("--yes flag set, automatically answer yes to question")
             return True
 
         answer = input("(y/n) << ")
@@ -280,7 +279,7 @@ class SubGit():
         log.info(f"repos to fetch: {repos_to_fetch}")
 
         if len(repos_to_fetch) == 0:
-            log.error(f"No repos to fetch found")
+            log.error("No repos to fetch found")
             return 1
 
         missing_any_repo = False
@@ -288,7 +287,7 @@ class SubGit():
         for repo_name in repos_to_fetch:
             try:
                 repo_path = Path().cwd() / repo_name
-                git_repo = Repo(repo_path)
+                Repo(repo_path)
             except git.exc.NoSuchPathError:
                 log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
                 missing_any_repo = True
@@ -299,7 +298,7 @@ class SubGit():
         with Pool(WORKER_COUNT) as pool:
             pool.map(self.fetch_repo, repos_to_fetch)
 
-        log.info(f"Fetching for all repos completed")
+        log.info("Fetching for all repos completed")
         return 0
 
     def fetch_repo(self, repo_name):
@@ -342,7 +341,7 @@ class SubGit():
         repos = []
 
         if len(active_repos) == 0:
-            log.error(f"There is no repos defined or enabled in the config")
+            log.error("There is no repos defined or enabled in the config")
             return 1
 
         if names is None:
@@ -352,7 +351,7 @@ class SubGit():
             answer = self.yes_no(f"Are you sure you want to 'git pull' the following repos '{repo_choices}'")
 
             if not answer:
-                log.warning(f"User aborted pull step")
+                log.warning("User aborted pull step")
                 return 1
         elif isinstance(names, list):
             # Validate that all provided repo names exists in the config
@@ -366,10 +365,10 @@ class SubGit():
             repos = names
         else:
             log.debug(f"Names {names}")
-            raise SubGitConfigException(f"Unsuported value type for argument names")
+            raise SubGitConfigException("Unsuported value type for argument names")
 
         if not repos:
-            raise SubGitConfigException(f"No valid repositories found")
+            raise SubGitConfigException("No valid repositories found")
 
         # Validation step across all repos to manipulate that they are not dirty
         # or anything uncommited that would break the code trees.
@@ -398,14 +397,13 @@ class SubGit():
                 has_dirty = True
 
         if has_dirty:
-            log.error(f"\nFound one or more dirty repos. Resolve it before continue...")
+            log.error("\nFound one or more dirty repos. Resolve it before continue...")
             return 1
 
         bad_repo_configs = []
 
         for name in repos:
             repo_config = config["repos"][name]
-            url = repo_config["url"]
             revision = repo_config["revision"]
 
             if "branch" in revision:
@@ -430,7 +428,6 @@ class SubGit():
             cloned = False
 
             if not repo_path.exists():
-                clone_rev = revision["tag"] if "tag" in revision else revision["branch"]
                 clone_url = repo_config.get("url", None)
                 cloned = True
 
@@ -449,7 +446,7 @@ class SubGit():
                 except Exception as e:
                     raise SubGitException(f'Clone "{name}" failed, exception: {e}')
 
-            log.debug(f"TODO: Parse for any changes...")
+            log.debug("TODO: Parse for any changes...")
             # TODO: Check that origin remote exists
 
             p = Path().cwd() / name
@@ -461,7 +458,7 @@ class SubGit():
 
             # How to handle the repo when a branch is specified
             if "branch" in revision:
-                log.debug(f"Handling branch pull case")
+                log.debug("Handling branch pull case")
 
                 # Extract the sub tag data
                 branch_revision = revision["branch"]
@@ -508,7 +505,7 @@ class SubGit():
                         filter_config = [filter_config]
 
                     if not isinstance(filter_config, list):
-                        raise SubGitConfigException(f"filter option must be a list of items or a single string")
+                        raise SubGitConfigException("filter option must be a list of items or a single string")
 
                     order_config = tag_config.get("order", None)
                     if order_config is None:
@@ -522,7 +519,7 @@ class SubGit():
                     select_config = tag_config.get("select", None)
                     select_method = None
                     if select_config is None:
-                        raise SubGitConfigException(f"select key is required in all tag revisions")
+                        raise SubGitConfigException("select key is required in all tag revisions")
 
                     log.debug(f"select_config: {select_config}")
 
@@ -567,7 +564,7 @@ class SubGit():
                 log.debug(select_output)
 
                 if not select_output:
-                    raise SubGitRepoException(f"No git tag could be parsed out with the current repo configuration")
+                    raise SubGitRepoException("No git tag could be parsed out with the current repo configuration")
 
                 log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
 
@@ -823,13 +820,13 @@ class SubGit():
         """
         filtered_sequence = []
 
-        log.debug(f"Running clean step on data")
+        log.debug("Running clean step on data")
 
         if not isinstance(regex_list, list):
-            raise SubGitConfigException(f"sequence for clean step must be a list of items")
+            raise SubGitConfigException("sequence for clean step must be a list of items")
 
         if not isinstance(regex_list, list):
-            raise SubGitConfigException(f"regex_list for clean step must be a list of items")
+            raise SubGitConfigException("regex_list for clean step must be a list of items")
 
         # If we have no regex to filter against, then return original list unaltered
         if len(regex_list) == 0:
@@ -838,11 +835,11 @@ class SubGit():
         for item in sequence:
             for filter_regex in regex_list:
                 if not isinstance(filter_regex, str):
-                    raise SubGitConfigException(f"ERROR: filter regex must be a string")
+                    raise SubGitConfigException("ERROR: filter regex must be a string")
 
                 # A empty regex string is not valid
                 if filter_regex.strip() == "":
-                    raise SubGitConfigException(f"ERROR: Empty regex filter string is not allowed")
+                    raise SubGitConfigException("ERROR: Empty regex filter string is not allowed")
 
                 log.debug(f"Filtering item '{str(item)}' against regex '{filter_regex}")
 
@@ -882,27 +879,27 @@ class SubGit():
         ordered_sequence = []
 
         if order_method == OrderAlgorithms.SEMVER:
-            log.debug(f"Ordering sequence of items by PEP440 SEMVER logic")
+            log.debug("Ordering sequence of items by PEP440 SEMVER logic")
             log.debug(sequence)
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
             ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(str(x))))
         elif order_method == OrderAlgorithms.TIME:
-            log.debug(f"Ordering sequence of items by TIME they was created, input:")
+            log.debug("Ordering sequence of items by TIME they was created, input:")
             log.debug(sequence)
 
             # When sorting by time the latest item in the sequence with the highest or most recent time
             # will be on index[0] in the returned sequence
             ordered_sequence = list(sorted(sequence, key=lambda t: t[1]))
         elif order_method == OrderAlgorithms.ALPHABETICAL:
-            log.debug(f"Order sequence of items by ALPHABETICAL string order")
+            log.debug("Order sequence of items by ALPHABETICAL string order")
             log.debug(sequence)
 
             # By default sorted will do alphabetical sort
             ordered_sequence = list(sorted(sequence))
         else:
-            raise SubGitConfigException(f"Unsupported ordering algorithm selected")
+            raise SubGitConfigException("Unsupported ordering algorithm selected")
 
         log.debug(f"Ordered sequence result: {ordered_sequence}")
 
@@ -940,7 +937,7 @@ class SubGit():
             elif selection_query == "first":
                 return sequence[0]
             else:
-                log.debug(f"Selection query")
+                log.debug("Selection query")
 
                 try:
                     spec = SpecifierSet(selection_query)
@@ -949,12 +946,12 @@ class SubGit():
                         spec.filter([str(item) for item in sequence]),
                     )
 
-                    log.debug(f"filtered_versions")
+                    log.debug("filtered_versions")
                     log.debug(filtered_versions)
 
                     return filtered_versions[-1]
                 except packaging.specifiers.InvalidSpecifier:
-                    log.warning(f"WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value")
+                    log.warning("WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value")
                     selection_method = SelectionMethods.EXACT
 
         if selection_method == SelectionMethods.EXACT:
@@ -966,4 +963,4 @@ class SubGit():
             return None
 
         if selection_method not in SelectionMethods.__members__:
-            raise SubGitConfigException(f"Unsupported select algorithm selected")
+            raise SubGitConfigException("Unsupported select algorithm selected")

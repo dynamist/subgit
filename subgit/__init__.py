@@ -5,7 +5,6 @@
 # python stdlib
 import logging
 import logging.config
-import os
 
 __author__ = "Johan Andersson <johan@dynamist.se>"
 __version_info__ = (0, 6, 2)

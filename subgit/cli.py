@@ -169,7 +169,6 @@ def parse_cli():
 
     # Set INFO by default, else DEBUG log level
     subgit.init_logging(5 if "DEBUG" in os.environ else 4)
-    log = logging.getLogger(__name__)
 
     argv = [cli_args["<command>"]] + cli_args["<args>"]
 
@@ -318,5 +317,5 @@ def cli_entrypoint():
         else:
             print(f"Exception type : {ex_type.__name__}")
             print(f"EXCEPTION MESSAGE: {ex_value}")
-            print(f"To get more detailed exception set environment variable 'DEBUG=1'")
-            print(f"To PDB debug set environment variable 'PDB=1'")
+            print("To get more detailed exception set environment variable 'DEBUG=1'")
+            print("To PDB debug set environment variable 'PDB=1'")

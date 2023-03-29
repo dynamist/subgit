@@ -3,7 +3,6 @@
 # python std lib
 import json
 import logging
-import os
 import subprocess
 
 # subgit imports
@@ -32,7 +31,7 @@ class GitInspect(SubGit):
             shell_command = "gitlab"
 
         try:
-            out = subprocess.run([
+            subprocess.run([
                     shell_command,
                     "--help"
                 ],
