@@ -1,3 +1,11 @@
+# 0.6.2 (2023-03-29)
+
+## Fixes
+
+- Fixed bug in 'subgit init' where the command would not work if there was no '.subgit.yml' file present. [#51](https://github.com/dynamist/subgit/pull/51)
+- Fixed bug in 'subgit pull' where subgit would not do a pull if there are changes on the remote. [#52](https://github.com/dynamist/subgit/pull/52)
+- Renamed sub-command 'subgit import' to 'subgit inspect'. This command will no longer write a new subgit config file. Instead it will write the configuration file to stdout as it would look so the user can redirect the output in to a file of their choice. [#53](https://github.com/dynamist/subgit/pull/53)
+
 # 0.6.1 (2023-02-02)
 
 ## Fixes
