@@ -1,6 +1,6 @@
 # Subgit
 
-The name came originally from "Submodule Git", or more commonly "Sub Git".
+The name came originally from *Submodule Git*, which became *Subgit*.
 
 The main purpose of this tool is to be used as a sync for cases to pull together a set of different Git repos into a deterministic directory tree. It is used to collect various individual parts into a whole.
 
@@ -8,7 +8,7 @@ The main two advantages over other solutions is that when compared to the normal
 
 This tool has been primarly constructed to be a part inside a CI/CD solution where you want to in a build step, clone the repo that contains the `.subgit.yml` config file, clone out whatever branches or tags for all the child repos and then perform some action or build step or test or similar function while using all of the repos from one spot.
 
-In the event of you having a configuration file with another name than `.subgit.yml`, you can easily add the -c, --conf flag after the sub command in the command to point to a optional configuration file.
+In the event of you having a configuration file with another name than `.subgit.yml`, you can easily add the `-c`, or `--conf`, flag to point to a an alternative path of the configuration file.
 
 ```bash
 subgit pull -c path/to/conf-file
@@ -16,14 +16,12 @@ subgit pull -c path/to/conf-file
 
 ## Usage
 
+Subgit installs a `subgit` command. For the Git afficinados there is a Git [subcommand](https://github.com/topics/git-subcommand) which allows accessing Subgit by running `git sub [...]`. 
+
 
 ### !!WARNING!!
 
 Subgit do not leave any guarantees that it will NOT MODIFY or THROW AWAY any local changes or modifications done to the git repo that it checks out and handles. Subgit is `NOT` in any way capable of commiting any changes or pushing any changes to your git remotes. This tool is only intended to be able to pull in and together a set of other git repos into one folder.
-
-In addition to `subgit`, you will also get an legacy alias `sgit` command.
-
-In the future there will also be support for integrating this tool directly into git by running `git sub [...]`. This makes it more transparent to use with any other git command.
 
 
 ### Quickstart
@@ -37,8 +35,6 @@ mkdir /tmp/subgit; cd /tmp/subgit
 ```
 
 Initialize an empty `.subgit.yml` config file.
-
-For compatibility we will support either naming the config file `.subgit.yml` and `.sgit.yml` until *1.0.0* release and at that time this support will be dropped.
 
 ```bash
 subgit init
@@ -61,15 +57,16 @@ To add any number of git repos that you want to clone by manually editing the `.
 Next step is to make the initial git clone/pull of all repos in the config file and move the repo to the specified revision. Running `subgit pull` command without any arguments will update all repos defined in the configuration file. If your repo is not present on disk it will make a initial `git clone` before moving to your selected revision.
 
 ```bash
+# Pull all repos in your config file
 subgit pull
 
-# Or you can pull a specific repo from your config file.
+# Or you can pull a specific repo from your config file
 subgit pull pykwalify
 ```
 
-Subgit relies on your own ssh config or other git config is properly setup and configured in sucha way that you can clone the git repo without having to specify any other credentials or similar inside the git repo.
+Subgit relies on your OpenSSH config or other Git config is properly setup and configured in such a way that you can clone the Git repo without having to specifying any credentials.
 
-You can view a summary of your current repo and config state by running `subgit status`
+You can view a summary of your current repo and config state by running `subgit status`.
 
 
 ## Fetch changes in a repo
@@ -88,9 +85,9 @@ subgit fetch pykwalify
 
 ## Delete pulled repos
 
-You can delete local copies of your repos by using `subgit delete` command. This will only remove your repos locally, also only if they're considered 'clean'. This means that there are no commited changes or untracked files. You will get no explicit warning about what changes makes the repos 'dirty', except the specific repo which contain the changes.
+You can delete local copies of your repos by using `subgit delete` command. This will only remove your repos locally, also only if they're considered *clean*. This means that there are no commited changes or untracked files. You will get no explicit warning about what changes makes the repos *dirty*, except the specific repo which contain the changes.
 
-The delete command supports the selection of either all repos or a subset of repos.
+The `subgit delete` command supports the selection of either all repos or a subset of repos.
 
 ```bash
 # Delete all repos in sequence
@@ -102,31 +99,34 @@ subgit delete pykwalify
 
 ## Inspect repos from Github or Gitlab
 
-If the user wants all repos from a group or account to be written to a file, subgit offers a way to do this by using 'subgit inspect'. This prints all repos in a finished rendered subgit config file format (yaml) to stdout. Redirect the output to a file to get a correct subgit cofiguration file. By default 'subgit inspect' excludes archived repos and those not owned by the specified user. Use '--archived' flag to filter for only archived repos.
+If the user wants all repos from a group or account to be written to a file, subgit offers a way to do this by using `subgit inspect`. This prints all repos  subgit config file format (YAML) to stdout. Redirect the output to a file to get a correct subgit configuration file. By default `subgit inspect` excludes archived repos and those not owned by the specified user. By adding the `--archived` flag will filter only archived repos.
 
-### Authentication for github cli
+**Authentication for Github CLI**
 
-Download the latest release for github cli from here https://github.com/cli/cli/releases/ depending on your system. Once installed you should have access to `gh` command from your terminal.
+Download the Github CLI from https://github.com/cli/cli/releases/
 
-Login to your github account with `gh auth login`. To verify you have correct access you can run `gh repo list` and it should list your personal github repos.
+Once installed you should have access to `gh` command in your terminal.
 
-### Authentication for gitlab cli
+Login to your Github account with `gh auth login`. To verify you have correct access you can run `gh repo list` and it should list your personal Github repos.
 
-Install python-gitlab from: https://python-gitlab.readthedocs.io/en/stable/
+**Authentication for Gitlab CLI**
 
-Next generate a new private API token for your account in gitlab. Create one here https://gitlab.com/-/profile/personal_access_tokens and set it to `readonly permissions` for everything including API access. 
+Install the Gitlab CLI from https://python-gitlab.readthedocs.io/en/stable/
 
-Export your token in your terminal with `export GITLAB_PRIVATE_TOKEN=<YOUR TOKEN>` and it will allow for api access. Test this by running `gitlab projects list`
+Once installed you should have access to `gitlab` command in your terminal.
+
+Next generate a new private API token for your account in gitlab. Create one here https://gitlab.com/-/profile/personal_access_tokens and set it to *readonly permissions* for everything including API access. 
+
+Export your token in your terminal with `export GITLAB_PRIVATE_TOKEN=<YOUR_TOKEN>` and it will allow for API access. Test this by running `gitlab project list`
 
 ```bash
-# Inspect all repos from github and write them to '.subgit.yml'
+# List all repos from either Github or Gitlab
 subgit inspect github <YOUR_USERNAME>
-
-# Inspect all repos from gitlab and write them to '.subgit.yml'
 subgit inspect gitlab <YOUR_USERNAME>
 
-# You can redirect the output to another file
-subgit inspect github <YOUR_USERNAME> > .some-other-file.yml
+# Optionally redirect the output to a subgit configuration file
+subgit inspect github <YOUR_USERNAME> > .my-gh-repos.yml
+subgit inspect gitlab <YOUR_USERNAME> > .my-gl-repos.yml
 ```
 
 ## Reset changed repos
@@ -143,16 +143,16 @@ subgit reset pykwalify
 
 ## Clean changed repos
 
-With 'subgit clean' you can clean a repo from dirty files if 'subgit reset' hasn't done the job. By using 'subgit clean' you have a variety of options. Either use '--force' flag to only delete untracked files, without recursively removing untracked directories. Or append the '-d' flag in addition to '--force' to also remove directories. There is also a '--dry-run' flag that only shows you what would be removed, if the command was successfully executed.
+With `subgit clean` you can clean a repo from dirty files if `subgit reset` hasn't done the job. By using `subgit clean` you have a variety of options. Either use `--force` flag to only delete untracked files, without recursively removing untracked directories. Or append the `-d` flag in addition to `--force` to also remove directories. There is also a `--dry-run` flag that only shows you what would be removed, if the command was successfully executed.
 
 ```bash
-# Clean all dirty repos from untracked files in sequence. (Skips directories)
+# Clean all dirty repos from untracked files in sequence, skipping directories.
 subgit clean --force
 
-# Clean all dirty repos from untracked files and directories.
+# Clean all dirty repos from untracked files, including directories.
 subgit clean --force -d
 
-# Cleans 'pykwalify' if it it dirty
+# Cleans 'pykwalify' if it's dirty
 subgit clean pykwalify --force -d
 
 # Shows only what would be done if run successfully
@@ -210,7 +210,7 @@ rm -r dist/
 
 # Generate the source build and wheels build
 python setup.py sdist bdist_wheel
-````
+```
 
 Test and verify package can be installed locally within the virtualenv and that basic usage test cases works as expected and that simple cli oppreations like `subgit --help` and `subgit pull` and `subgit status` etc works as expected.
 
@@ -220,7 +220,7 @@ To upload the previous built dist packages to pypi run
 
 ```bash
 python -m twine upload --repository testpypi dist/*
-````
+```
 
 Input your username + password to the prompt. Note that username is case sensetive.
 
@@ -229,7 +229,7 @@ Validate your release was uploaded correct by visiting https://test.pypi.org/man
 ```bash
 # Upload to pypi.org
 python -m twine upload dist/*
-````
+```
 
 Input your username + password but this time for your account on pypi.org and NOT test.pypi.org. These are two separate accounts. Same here, validate the build by going to https://pypi.org/manage/project/subgit/ and once these files is uploaded they are published and can't be rebuilt/replaced w/o making a post fix release. Read up onn python.org own release documentation for those steps.
 
