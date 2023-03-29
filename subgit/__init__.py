@@ -8,7 +8,7 @@ import logging.config
 import os
 
 __author__ = "Johan Andersson <johan@dynamist.se>"
-__version_info__ = (0, 6, 1)
+__version_info__ = (0, 6, 2)
 __version__ = ".".join(map(str, __version_info__))
 
 

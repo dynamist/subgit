@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="subgit",
-    version="0.6.1",
+    version="0.6.2",
     description="CLI tool ",
     long_description=readme,
     long_description_content_type="text/markdown",
