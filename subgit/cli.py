@@ -112,8 +112,6 @@ Usage:
     subgit inspect (github | gitlab) <owner> [options]
 
 Options:
-    -y, --yes                                Answers yes to all questions (use with caution)
-    -o <filename>, --output-file <filename>  Used if inspect output should be directed to a .subgit.yml file
     -a, --archived                           Writes only archived repos to output file
     -h, --help                               Show this help message and exit
 
@@ -272,8 +270,6 @@ def run(cli_args, sub_args):
 
     if cli_args["<command>"] == "inspect":
         git_inspect = GitInspect(
-            config_file_name=sub_args.get("--output-file"), 
-            answer_yes=sub_args["--yes"],
             is_archived=sub_args.get("--archived"),
         )
         github = sub_args["github"]
