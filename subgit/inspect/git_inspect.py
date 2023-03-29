@@ -17,21 +17,8 @@ log = logging.getLogger(__name__)
 
 
 class GitInspect(SubGit):
-    def __init__(self, config_file_name=None, answer_yes=None, is_archived=False):
-        self.answer_yes = answer_yes
+    def __init__(self, is_archived=False):
         self.is_archived = is_archived
-        self.config_file_name = config_file_name
-
-        # Defaults config file to '.subgit-github.yml' if nothing is specified
-        if not config_file_name:
-            self.subgit_config_file_name = ".subgit.yml"
-
-            if self.is_archived:
-                self.subgit_config_file_name = ".subgit-archived.yml"
-        else:
-            self.subgit_config_file_name = config_file_name
-
-        self.subgit_config_file_path = os.path.join(os.getcwd(), self.subgit_config_file_name)
 
     def _cli_installed(self, source):
         """
@@ -110,37 +97,9 @@ class GitInspect(SubGit):
                 "url": repo_data["sshUrl"],
             }
 
-        # If no config file name specfied, example file will be written to stdout
-        if not self.config_file_name:
-            log.info("Your '.subgit.yml' file would look like this:")
-            log.info("repos:")
+        yaml_output = yaml.dump({"repos": repos}, default_flow_style=False, indent=2)
 
-            for repo in repos:
-                branch = repos[repo]["revision"]["branch"]
-                url = repos[repo]["url"]
-                log.info(f"  {repo}:")
-                log.info(f"    revision:")
-                log.info(f"      branch: {branch}")
-                log.info(f"    url: {url}")
-            
-            return 0
-
-        # If config file name specified, inspect command will look for the file and ask for 
-        # confirmation whether user wants to overwrite this file
-        if os.path.exists(self.subgit_config_file_path):
-            answer = self.yes_no(f"File: {self.subgit_config_file_path} already exists on disk, do you want to overwrite the file?")
-
-            if not answer:
-                log.error("Aborting writing to file...")
-                return 1
-            
-        yml = yaml.YAML()
-        yml.indent(mapping=2, sequence=4, offset=2)
-        with open(self.subgit_config_file_path, "w") as stream:
-            yml.dump({"repos": repos}, stream)
-
-        log.info(f"Successfully wrote to file: {self.subgit_config_file_name}")
-        return 0
+        print(yaml_output)
 
     def inspect_gitlab(self, owner):
         """
@@ -191,34 +150,6 @@ class GitInspect(SubGit):
                 "url": repo_data["ssh_url_to_repo"],
             }
 
-        # If no config file name specfied, example file will be written to stdout
-        if not self.config_file_name:
-            log.info("Your '.subgit.yml' file would look like this:")
-            log.info("repos:")
+        yaml_output = yaml.dump({"repos": repos}, default_flow_style=False, indent=2)
 
-            for repo in repos:
-                branch = repos[repo]["revision"]["branch"]
-                url = repos[repo]["url"]
-                log.info(f"  {repo}:")
-                log.info(f"    revision:")
-                log.info(f"      branch: {branch}")
-                log.info(f"    url: {url}")
-
-            return 0
-
-        # If config file name specified, inspect command will look for the file and ask for 
-        # confirmation whether user wants to overwrite this file
-        if os.path.exists(self.subgit_config_file_path):
-            answer = self.yes_no(f"File: {self.subgit_config_file_path} already exists on disk, do you want to overwrite the file?")
-
-            if not answer:
-                log.error("Aborting writing to file...")
-                return 1
-
-        yml = yaml.YAML()
-        yml.indent(mapping=2, sequence=4, offset=2)
-        with open(self.subgit_config_file_path, "w") as stream:
-            yml.dump({"repos": repos}, stream)
-
-        log.info(f"Successfully wrote to file: {self.subgit_config_file_name}")
-        return 0
+        print(yaml_output)

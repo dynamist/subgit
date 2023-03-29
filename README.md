@@ -100,9 +100,9 @@ subgit delete
 subgit delete pykwalify
 ```
 
-## Import repos from Github or Gitlab
+## Inspect repos from Github or Gitlab
 
-You can import a list of repos and create a new or overwrite an existing configuration file. Getting access to this command, two things need to be prepared. If these requirements are not met, the command will return an error and exit.
+If the user wants all repos from a group or account to be written to a file, subgit offers a way to do this by using 'subgit inspect'. This prints all repos in a finished rendered subgit config file format (yaml) to stdout. Redirect the output to a file to get a correct subgit cofiguration file. By default 'subgit inspect' excludes archived repos and those not owned by the specified user. Use '--archived' flag to filter for only archived repos.
 
 ### Authentication for github cli
 
@@ -119,14 +119,14 @@ Next generate a new private API token for your account in gitlab. Create one her
 Export your token in your terminal with `export GITLAB_PRIVATE_TOKEN=<YOUR TOKEN>` and it will allow for api access. Test this by running `gitlab projects list`
 
 ```bash
-# Import all repos from github and write them to '.subgit.yml'
-subgit import github <YOUR_USERNAME>
+# Inspect all repos from github and write them to '.subgit.yml'
+subgit inspect github <YOUR_USERNAME>
 
-# Import all repos from gitlab and write them to '.subgit.yml'
-subgit import gitlab <YOUR_USERNAME>
+# Inspect all repos from gitlab and write them to '.subgit.yml'
+subgit inspect gitlab <YOUR_USERNAME>
 
-# You can redirect the output to another file with -o flag
-subgit import github <YOUR_USERNAME> -o .some-other-file.yml
+# You can redirect the output to another file
+subgit inspect github <YOUR_USERNAME> > .some-other-file.yml
 ```
 
 ## Reset changed repos
