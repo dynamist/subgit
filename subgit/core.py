@@ -434,7 +434,7 @@ class SubGit:
         if bad_repo_configs:
             bad_repos_string = ", ".join(repo for repo in bad_repo_configs)
             log.error(
-                f"One or more repos in congif file has an invalid branch option... {bad_repos_string}"
+                f"One or more repos in config file has an invalid branch option... {bad_repos_string}"
             )
             return 1
 
