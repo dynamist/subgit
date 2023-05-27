@@ -27,8 +27,7 @@ from ruamel import yaml
 log = logging.getLogger(__name__)
 
 
-class SubGit():
-
+class SubGit:
     def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
         self.config_file_path = config_file_path
@@ -39,7 +38,7 @@ class SubGit():
         else:
             self.subgit_config_file_name = ".subgit.yml"
             self.subgit_config_file_path = Path.cwd() / ".subgit.yml"
-    
+
     def _get_recursive_config_path(self):
         """
         Looks for either .sgit.yml or .subgit.yml recursively
@@ -54,7 +53,9 @@ class SubGit():
                 self.subgit_config_file_path = path / self.subgit_config_file_name
 
                 if self.subgit_config_file_path.exists():
-                    log.warning("WARNING: using filename .sgit.yml will be deprecated in the future. Please convert it to .subgit.yml")
+                    log.warning(
+                        "WARNING: using filename .sgit.yml will be deprecated in the future. Please convert it to .subgit.yml"
+                    )
                     break
 
                 # If old file do not exists then try the new filename
@@ -94,11 +95,18 @@ class SubGit():
         tmp_config = DEFAULT_REPO_DICT
 
         if isinstance(repo_name, str) and isinstance(repo_url, str):
-            log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
-            tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
+            log.info(
+                f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config"
+            )
+            tmp_config["repos"][repo_name] = {
+                "url": repo_url,
+                "revision": {"branch": "master"},
+            }
 
         self._dump_config_file(tmp_config)
-        log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
+        log.info(
+            f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk'
+        )
 
     def _get_config_file(self):
         if not self.subgit_config_file_path.exists():
@@ -162,10 +170,12 @@ class SubGit():
                         shell=True,
                     )
                     output, stderr = process.communicate()
-                    parsed_output = str(output).replace('\\n', '')
+                    parsed_output = str(output).replace("\\n", "")
                     print(f"  Last pull/fetch: {parsed_output}")
                 else:
-                    print("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
+                    print(
+                        "  Last pull/fetch: Repo has not been pulled or fetch since initial clone"
+                    )
             else:
                 print("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
@@ -175,9 +185,9 @@ class SubGit():
             else:
                 print("  Repo is dirty? ---")
 
-            branch = repo_data['revision'].get('branch', '---')
-            commit = repo_data['revision'].get('commit', '---')
-            tag = repo_data['revision'].get('tag', '---')
+            branch = repo_data["revision"].get("branch", "---")
+            commit = repo_data["revision"].get("commit", "---")
+            tag = repo_data["revision"].get("tag", "---")
 
             print("  Revision:")
 
@@ -187,7 +197,10 @@ class SubGit():
                     if branch in repo.heads:
                         commit_hash = str(repo.heads[branch].commit)
                         commit_message = str(repo.heads[branch].commit.summary)
-                        has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                        has_new = (
+                            repo.remotes.origin.refs["master"].commit
+                            != repo.heads[branch].commit
+                        )
                         is_in_origin = f"{branch in repo.remotes.origin.refs}"
                     else:
                         commit_hash = "Local branch not found"
@@ -289,7 +302,9 @@ class SubGit():
                 repo_path = Path().cwd() / repo_name
                 Repo(repo_path)
             except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
+                log.error(
+                    f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done"
+                )
                 missing_any_repo = True
 
         if missing_any_repo:
@@ -348,7 +363,9 @@ class SubGit():
             repos = config.get("repos", [])
             repo_choices = ", ".join(active_repos)
 
-            answer = self.yes_no(f"Are you sure you want to 'git pull' the following repos '{repo_choices}'")
+            answer = self.yes_no(
+                f"Are you sure you want to 'git pull' the following repos '{repo_choices}'"
+            )
 
             if not answer:
                 log.warning("User aborted pull step")
@@ -358,7 +375,9 @@ class SubGit():
             for name in names:
                 if name not in active_repos:
                     choices = ", ".join(active_repos)
-                    log.error(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
+                    log.error(
+                        f'Repo with name "{name}" not found in config file. Choices are "{choices}"'
+                    )
                     return 1
 
             # If all repos was found, use the list of provided repos as list to process below
@@ -388,7 +407,9 @@ class SubGit():
 
             # A dirty repo means there is uncommited changes in the tree
             if repo.is_dirty():
-                log.error(f'The repo "{name}" is dirty and has uncommited changes in the following files')
+                log.error(
+                    f'The repo "{name}" is dirty and has uncommited changes in the following files'
+                )
                 dirty_files = [item.a_path for item in repo.index.diff(None)]
 
                 for file in dirty_files:
@@ -412,7 +433,9 @@ class SubGit():
 
         if bad_repo_configs:
             bad_repos_string = ", ".join(repo for repo in bad_repo_configs)
-            log.error(f"One or more repos in congif file has an invalid branch option... {bad_repos_string}")
+            log.error(
+                f"One or more repos in congif file has an invalid branch option... {bad_repos_string}"
+            )
             return 1
 
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
@@ -432,7 +455,9 @@ class SubGit():
                 cloned = True
 
                 if not clone_url:
-                    raise SubGitConfigException(f"Missing required key 'url' on repo '{name}'")
+                    raise SubGitConfigException(
+                        f"Missing required key 'url' on repo '{name}'"
+                    )
 
                 try:
                     # Cloning a repo w/o a specific commit/branch/tag it will clone out whatever default
@@ -465,7 +490,9 @@ class SubGit():
 
                 if not cloned:
                     try:
-                        latest_remote_sha = str(repo.rev_parse(f"origin/{branch_revision}"))
+                        latest_remote_sha = str(
+                            repo.rev_parse(f"origin/{branch_revision}")
+                        )
                         latest_local_sha = str(repo.head.commit.hexsha)
 
                         if latest_remote_sha != latest_local_sha:
@@ -480,7 +507,9 @@ class SubGit():
                 # TODO: This only support branches for now
                 repo.heads[branch_revision].checkout()
 
-                log.info(f'Successfully pull repo "{name}" to latest commit on branch "{branch_revision}"')
+                log.info(
+                    f'Successfully pull repo "{name}" to latest commit on branch "{branch_revision}"'
+                )
                 log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
             elif "tag" in revision:
                 #
@@ -505,21 +534,29 @@ class SubGit():
                         filter_config = [filter_config]
 
                     if not isinstance(filter_config, list):
-                        raise SubGitConfigException("filter option must be a list of items or a single string")
+                        raise SubGitConfigException(
+                            "filter option must be a list of items or a single string"
+                        )
 
                     order_config = tag_config.get("order", None)
                     if order_config is None:
                         order_algorithm = OrderAlgorithms.SEMVER
                     else:
-                        order_algorithm = OrderAlgorithms.__members__.get(order_config.upper(), None)
+                        order_algorithm = OrderAlgorithms.__members__.get(
+                            order_config.upper(), None
+                        )
 
                         if order_algorithm is None:
-                            raise SubGitConfigException(f"Unsupported order algorithm chose: {order_config.upper()}")
+                            raise SubGitConfigException(
+                                f"Unsupported order algorithm chose: {order_config.upper()}"
+                            )
 
                     select_config = tag_config.get("select", None)
                     select_method = None
                     if select_config is None:
-                        raise SubGitConfigException("select key is required in all tag revisions")
+                        raise SubGitConfigException(
+                            "select key is required in all tag revisions"
+                        )
 
                     log.debug(f"select_config: {select_config}")
 
@@ -530,14 +567,20 @@ class SubGit():
 
                         log.debug(f"select_method: {select_method_value}")
 
-                        select_method = SelectionMethods.__members__.get(select_method_value.upper(), None)
+                        select_method = SelectionMethods.__members__.get(
+                            select_method_value.upper(), None
+                        )
 
                         if select_method is None:
-                            raise SubGitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
+                            raise SubGitConfigException(
+                                f"Unsupported select method chosen: {select_method_value.upper()}"
+                            )
                     else:
                         select_method = SelectionMethods.SEMVER
                 else:
-                    raise SubGitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
+                    raise SubGitConfigException(
+                        f"Key revision.tag for repo {name} must be a string or dict object"
+                    )
 
                 log.debug(f"{filter_config}")
                 log.debug(f"{order_config}")
@@ -547,9 +590,7 @@ class SubGit():
 
                 # Main tag parsing logic
 
-                git_repo_tags = [
-                    tag for tag in repo.tags
-                ]
+                git_repo_tags = [tag for tag in repo.tags]
                 log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
                 filter_output = self._filter(git_repo_tags, filter_config)
@@ -564,9 +605,13 @@ class SubGit():
                 log.debug(select_output)
 
                 if not select_output:
-                    raise SubGitRepoException("No git tag could be parsed out with the current repo configuration")
+                    raise SubGitRepoException(
+                        "No git tag could be parsed out with the current repo configuration"
+                    )
 
-                log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
+                log.info(
+                    f"Attempting to checkout tag '{select_output}' for repo '{name}'"
+                )
 
                 # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
                 # inside the git repo, we will get sub exceptions raised by git module.
@@ -595,7 +640,9 @@ class SubGit():
         if not repo_paths:
             return 1
 
-        answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'?")
+        answer = self.yes_no(
+            f"Are you sure you want to delete the following repos '{repo_choices}'?"
+        )
 
         if answer:
             for path in repo_paths:
@@ -603,7 +650,9 @@ class SubGit():
 
                 if self._check_remote(current_repo):
                     has_dirty_repos = True
-                    log.critical(f"'{path.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+                    log.critical(
+                        f"'{path.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion."
+                    )
                 else:
                     good_repos.append(path)
 
@@ -628,7 +677,9 @@ class SubGit():
         if not repo_paths:
             return 1
 
-        answer = self.yes_no(f"Are you sure you want to reset the following repos '{repo_choices}'?")
+        answer = self.yes_no(
+            f"Are you sure you want to reset the following repos '{repo_choices}'?"
+        )
 
         if answer:
             for path in repo_paths:
@@ -722,7 +773,7 @@ class SubGit():
         working_repos = {
             "active_repos": active_repos,
             "repos": repos,
-            "repo_choices": repo_choices
+            "repo_choices": repo_choices,
         }
 
         return working_repos
@@ -741,7 +792,9 @@ class SubGit():
                 except IndexError:
                     has_remote_difference = True
 
-                if (remote_commit != local_commit) or repo.is_dirty(untracked_files=True):
+                if (remote_commit != local_commit) or repo.is_dirty(
+                    untracked_files=True
+                ):
                     has_remote_difference = True
 
         return has_remote_difference
@@ -762,7 +815,7 @@ class SubGit():
         Method to return two lists of repos.
         One that contains the names of the repos specified in subgit command.
         One that contains all repos listed in the working subgit config file.
-        
+
         Example purpose is to easier check if the repo(s) specified in the subgit command,
         exists in the subgit config file. etc.
         """
@@ -775,7 +828,9 @@ class SubGit():
             repo_paths.append(Path().cwd() / repo)
 
             if repo not in active_repos:
-                log.critical(f"'{repo}' does not exist in {self.subgit_config_file_name} config file.")
+                log.critical(
+                    f"'{repo}' does not exist in {self.subgit_config_file_name} config file."
+                )
                 in_conf_file = False
 
         if not in_conf_file:
@@ -785,7 +840,9 @@ class SubGit():
             repo_name = path.name
 
             if not path.exists():
-                log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
+                log.warning(
+                    f"Path to repo does not exist: {repo_name} | Skipping {repo_name}"
+                )
                 bad_path.append(path)
 
         for path in bad_path:
@@ -823,10 +880,14 @@ class SubGit():
         log.debug("Running clean step on data")
 
         if not isinstance(regex_list, list):
-            raise SubGitConfigException("sequence for clean step must be a list of items")
+            raise SubGitConfigException(
+                "sequence for clean step must be a list of items"
+            )
 
         if not isinstance(regex_list, list):
-            raise SubGitConfigException("regex_list for clean step must be a list of items")
+            raise SubGitConfigException(
+                "regex_list for clean step must be a list of items"
+            )
 
         # If we have no regex to filter against, then return original list unaltered
         if len(regex_list) == 0:
@@ -839,7 +900,9 @@ class SubGit():
 
                 # A empty regex string is not valid
                 if filter_regex.strip() == "":
-                    raise SubGitConfigException("ERROR: Empty regex filter string is not allowed")
+                    raise SubGitConfigException(
+                        "ERROR: Empty regex filter string is not allowed"
+                    )
 
                 log.debug(f"Filtering item '{str(item)}' against regex '{filter_regex}")
 
@@ -884,7 +947,9 @@ class SubGit():
 
             # By using packages module and Version class we can properly compare semver
             # versions with PEP440 compatible version compare
-            ordered_sequence = list(sorted(sequence, key=lambda x: version.Version(str(x))))
+            ordered_sequence = list(
+                sorted(sequence, key=lambda x: version.Version(str(x)))
+            )
         elif order_method == OrderAlgorithms.TIME:
             log.debug("Ordering sequence of items by TIME they was created, input:")
             log.debug(sequence)
@@ -951,7 +1016,9 @@ class SubGit():
 
                     return filtered_versions[-1]
                 except packaging.specifiers.InvalidSpecifier:
-                    log.warning("WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value")
+                    log.warning(
+                        "WARNING: Invalid SEMVER select query. Falling back to EXCAT matching of value"
+                    )
                     selection_method = SelectionMethods.EXACT
 
         if selection_method == SelectionMethods.EXACT:

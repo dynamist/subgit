@@ -31,10 +31,8 @@ class GitInspect(SubGit):
             shell_command = "gitlab"
 
         try:
-            subprocess.run([
-                    shell_command,
-                    "--help"
-                ],
+            subprocess.run(
+                [shell_command, "--help"],
                 shell=False,
                 capture_output=True,
             )
@@ -52,11 +50,16 @@ class GitInspect(SubGit):
             log.error("Github cli not installed. Exiting subgit...")
             return 1
 
-        out = subprocess.run([
-                "gh", "repo", "list",
+        out = subprocess.run(
+            [
+                "gh",
+                "repo",
+                "list",
                 f"{owner}",
-                "--json", "id,name,defaultBranchRef,sshUrl,isArchived",
-                "-L", "100"
+                "--json",
+                "id,name,defaultBranchRef,sshUrl,isArchived",
+                "-L",
+                "100",
             ],
             shell=False,
             capture_output=True,
@@ -64,19 +67,25 @@ class GitInspect(SubGit):
         data = json.loads(out.stdout)
         repos = {}
         mapped_data = {
-            repo["name"].lower():
-            repo for repo in data
-            if repo["isArchived"] == self.is_archived
-        }
-        sorted_names = sorted([
-            repo["name"].lower()
+            repo["name"].lower(): repo
             for repo in data
             if repo["isArchived"] == self.is_archived
-        ])
+        }
+        sorted_names = sorted(
+            [
+                repo["name"].lower()
+                for repo in data
+                if repo["isArchived"] == self.is_archived
+            ]
+        )
 
         if not sorted_names:
-            log.warning("Either the user does not exist, or the specified user doesn't have any available repos...")
-            log.warning("Please make sure the repo owner is correct and that you have the correct permissions...")
+            log.warning(
+                "Either the user does not exist, or the specified user doesn't have any available repos..."
+            )
+            log.warning(
+                "Please make sure the repo owner is correct and that you have the correct permissions..."
+            )
             log.warning("No repos to write to file. Exiting...")
             return 1
 
@@ -112,9 +121,12 @@ class GitInspect(SubGit):
         out = subprocess.run(
             [
                 "gitlab",
-                "-o", "json",
-                "project", "list",
-                "--membership", "yes",
+                "-o",
+                "json",
+                "project",
+                "list",
+                "--membership",
+                "yes",
                 "--all",
             ],
             shell=False,
@@ -123,19 +135,27 @@ class GitInspect(SubGit):
         repos = {}
         data = json.loads(out.stdout)
         mapped_data = {
-            repo["name"].lower():
-            repo for repo in data
-            if repo["namespace"]["name"] == owner and repo["archived"] == self.is_archived
-        }
-        sorted_names = sorted([
-            repo["name"].lower()
+            repo["name"].lower(): repo
             for repo in data
-            if repo["namespace"]["name"] == owner and repo["archived"] == self.is_archived
-        ])
+            if repo["namespace"]["name"] == owner
+            and repo["archived"] == self.is_archived
+        }
+        sorted_names = sorted(
+            [
+                repo["name"].lower()
+                for repo in data
+                if repo["namespace"]["name"] == owner
+                and repo["archived"] == self.is_archived
+            ]
+        )
 
         if not sorted_names:
-            log.warning("Either the user does not exist, or the specified user doesn't have any available repos...")
-            log.warning("Please make sure the repo owner is correct and that you have the correct permissions...")
+            log.warning(
+                "Either the user does not exist, or the specified user doesn't have any available repos..."
+            )
+            log.warning(
+                "Please make sure the repo owner is correct and that you have the correct permissions..."
+            )
             log.warning("No repos to write to file. Exiting...")
             return 1
 
