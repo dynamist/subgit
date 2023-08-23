@@ -28,20 +28,30 @@ def user_data():
     non_working_giturl = "git+https://github.com/dynamist/subgit-nonworking.git"
     non_working_gitrev = "master"
 
-    repository_test_data = {
-        working_gitname: {
+    repository_test_data = [
+        {
+            "name": working_gitname,
             "url": working_giturl,
-            "revision": {"branch": working_gitrev},
+            "revision": {
+                "branch": working_gitrev,
+            },
         },
-        branch_gitname: {
+        {
+            "name": branch_gitname,
             "url": branch_giturl,
-            "revision": {"branch": branch_gitrev},
+            "revision": {
+                "branch": branch_gitrev,
+            },
         },
-        non_working_gitname: {
+        {
+            "name": non_working_gitname,
             "url": non_working_giturl,
-            "revision": {"branch": non_working_gitrev},
+            "revision": {
+                "branch": non_working_gitrev,
+            },
         },
-    }
+    ]
+
     return repository_test_data
 
 
@@ -86,7 +96,7 @@ def test_get_config_file(subgit):
     assert retcode is None
 
     loaded_config = subgit._get_config_file()
-    assert loaded_config == {"repos": {}}
+    assert loaded_config == {"repos": []}
 
     # If no .subgit config file exists we should get system exit call
     os.remove(subgit.subgit_config_file_path)
@@ -164,13 +174,17 @@ def test_repo_pull_all(subgit, mocker, monkeypatch):
     monkeypatch.setattr(Repo, "clone_from", mock_clone)
 
     # Update 'all' should return SubGitException with faulty input
-    data = json.dumps({"repos": {"broken-url": user_data().get("broken-url")}}, indent=2)
+    # TODO: It is bad to hardcode the broken-url test to position 2
+    data = json.dumps({
+        "repos": [user_data()[2]]
+    }, indent=2)
 
     with subgit.subgit_config_file_path.open(mode="w") as file:
         file.write(data)
 
     with pytest.raises(SubGitConfigException) as pytest_wrapped_e:
         subgit.pull("all")
+
     assert pytest_wrapped_e.type == SubGitConfigException
     del data
 
@@ -194,7 +208,7 @@ def test_repo_pull_list(subgit, mocker):
     assert retcode is None
 
     # Update with list should return 1
-    data = list(user_data().keys())
+    data = list(user_data())
     retcode = subgit.pull(data)
     assert retcode == 1
     del data
