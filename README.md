@@ -49,7 +49,7 @@ Inspect the content by looking inside the `.subgit.yml` config file
 cat .subgit.yml
 
 # This will show the default config in an empty config file
-repos: { }
+repos: [ ]
 ```
 
 To add any number of git repos that you want to clone by manually editing the `.subgit.yml` configuration file.

@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 
 
 class SubGit():
-
     def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
         self.config_file_path = config_file_path
@@ -95,7 +94,11 @@ class SubGit():
 
         if isinstance(repo_name, str) and isinstance(repo_url, str):
             log.info(f"Adding initial git repo '{repo_name}' with url '{repo_url}' to your config")
-            tmp_config["repos"][repo_name] = {"url": repo_url, "revision": {"branch": "master"}}
+            tmp_config["repos"].append({
+                "name": repo_name,
+                "url": repo_url,
+                "revision": {"branch": "master"}
+            })
 
         self._dump_config_file(tmp_config)
         log.info(f'Successfully wrote new config file "{self.subgit_config_file_name}" to disk')
@@ -135,7 +138,9 @@ class SubGit():
             print("  No repos found")
             return 1
 
-        for repo_name, repo_data in repos.items():
+        for repo_data in repos:
+            repo_name = repo_data["name"]
+
             print(f"{repo_name}")
             print(f"  Url: {repo_data.get('url', 'NOT SET')}")
 
@@ -266,11 +271,14 @@ class SubGit():
         repos_to_fetch = []
 
         if repos is None:
-            for repo_name in config["repos"]:
+            for repo_data in config["repos"]:
+                repo_name = repo_data["name"]
                 repos_to_fetch.append(repo_name)
 
         if isinstance(repos, list):
-            for repo_name in repos:
+            for repo_data in repos:
+                repo_name = repo_data["name"]
+
                 if repo_name in config["repos"]:
                     repos_to_fetch.append(repo_name)
                 else:
@@ -318,7 +326,9 @@ class SubGit():
         """
         active_repos = []
 
-        for repo_name, repo_data in config.get("repos", {}).items():
+        for repo_data in config.get("repos", []):
+            repo_name = repo_data["name"]
+
             if repo_data.get("enable", True):
                 active_repos.append(repo_name)
 
@@ -361,8 +371,9 @@ class SubGit():
                     log.error(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
                     return 1
 
-            # If all repos was found, use the list of provided repos as list to process below
-            repos = names
+                for repo_data in config["repos"]:
+                    if repo_data["name"] == name:
+                        repos.append(repo_data)
         else:
             log.debug(f"Names {names}")
             raise SubGitConfigException("Unsuported value type for argument names")
@@ -377,7 +388,8 @@ class SubGit():
 
         has_dirty = False
 
-        for name in repos:
+        for repo_data in repos:
+            name = repo_data["name"]
             repo_path = Path().cwd() / name
 
             # If the path do not exists then the repo can't be dirty
@@ -402,9 +414,9 @@ class SubGit():
 
         bad_repo_configs = []
 
-        for name in repos:
-            repo_config = config["repos"][name]
-            revision = repo_config["revision"]
+        for repo_data in repos:
+            name = repo_data["name"]
+            revision = repo_data["revision"]
 
             if "branch" in revision:
                 if not revision["branch"]:
@@ -417,18 +429,18 @@ class SubGit():
 
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
 
-        for name in repos:
+        for repo_data in repos:
+            name = repo_data["name"]
             log.info("")
 
             repo_path = Path().cwd() / name
-            repo_config = config["repos"][name]
-            revision = repo_config["revision"]
+            revision = repo_data["revision"]
 
             # Boolean value wether repo is newly cloned.
             cloned = False
 
             if not repo_path.exists():
-                clone_url = repo_config.get("url", None)
+                clone_url = repo_data.get("url", None)
                 cloned = True
 
                 if not clone_url:
@@ -439,7 +451,8 @@ class SubGit():
                     # branch or where the origin HEAD is pointing to. After we clone we can then move our
                     # repo to the correct revision we want.
                     repo = Repo.clone_from(
-                        config["repos"][name]["url"],
+                        # config["repos"][name]["url"],
+                        repo_data["url"],
                         repo_path,
                     )
                     log.info(f'Successfully cloned repo "{name}" from remote server')

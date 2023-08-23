@@ -6,7 +6,7 @@ This is the following syntax and extra options. More detailed examples is furthe
 
 ```yaml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
@@ -72,7 +72,7 @@ Basic example. This example will not filter out any items, it will order them by
 ```yaml
 # .subgit.yml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
@@ -92,7 +92,7 @@ This example will ignore the semver and order all tags by time and pick the last
 ```yaml
 # .subgit.yml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
@@ -114,7 +114,7 @@ parsing for the latest tag. It will default to semver comparison and select the 
 ```yaml
 # .subgit.yml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
@@ -138,7 +138,7 @@ In this example we want to have the latest semver version. It will extract out t
 ```yaml
 # .subgi.yml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:
@@ -162,7 +162,7 @@ In this example we can limit the version we want to select to a older tag based 
 ```yaml
 # .subgit.yml
 repos:
-  pykwalify:
+  - name: pykwalify
     url: git@github.com:Grokzen/pykwalify.git
     revision:
       tag:

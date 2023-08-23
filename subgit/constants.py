@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-DEFAULT_REPO_DICT = {"repos": {}}
+DEFAULT_REPO_DICT = {"repos": []}
 
 WORKER_COUNT = 8
 
