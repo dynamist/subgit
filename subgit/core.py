@@ -608,6 +608,21 @@ class SubGit():
 
                 # Set what paths we defined to be checked out
                 g.sparse_checkout("set", *repos)
+
+                # List all items (files and directories) in the cwd
+                items = list(p.iterdir())
+
+                # Filter out the '.git' folder
+                visible_items = [
+                    item
+                    for item in items
+                    if item.name != '.git'
+                ]
+
+                log.debug(f"Visible items after filtering {visible_items}")
+
+                if len(visible_items) == 0:
+                    log.warning("You have sparse checkout enabled but no files was found in the git repo after your filter. Possible that your paths do not match any content in the git repo.")
             else:
                 # By always setting disable as a default, this will automatically revert any repo
                 # that used to have sparse enabled but no longer is ensabled
