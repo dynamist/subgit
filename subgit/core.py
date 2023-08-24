@@ -451,7 +451,6 @@ class SubGit():
                     # branch or where the origin HEAD is pointing to. After we clone we can then move our
                     # repo to the correct revision we want.
                     repo = Repo.clone_from(
-                        # config["repos"][name]["url"],
                         repo_data["url"],
                         repo_path,
                     )
