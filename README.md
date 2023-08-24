@@ -167,7 +167,35 @@ Requirement for a merge request
 - Any gitlab actions or PR specific tests/validation shold be green
 - No merge conflicts with master branch, if you have then you either merge master into your branch and resolve conflicts, or you rebase your branch ontop of master branch
 - Always do basic useability tests with most common commands as tests do not always show errors with everything
- 
+
+
+## Sparse checkout
+
+This feature requires you to have git version `2.25.0` or later
+
+A in-depth blog about `sparse-checkout` in general can be read [here by github.blog](https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/)
+
+The main idea with `sparse-checkout` feature is to reduce down the size of mono repos into more manageable chunks of both output files in your file tree, but also to enable less git refs to clone.
+
+By adding the key `sparse.paths` to your repo config, you can define what folders that should be visible in the pulled file tree.
+
+```
+# Example config file
+repos:
+  - name: phabfive
+    url: git@github.com:dynamist/phabfive.git
+    revision:
+      branch: "master"
+    sparse:
+      paths:
+        - "phabfive/"
+        - "tests/"
+ ```
+
+This example would clone the entire repo, all git refs within it and enable `sparse-checkout` on the cloned repo at that given revision (could be branch, commit or tag) and then configure the git clone to have the two folders `phabfive/` and `tests/` as what is visible in the tree.
+
+The paths you define works similar to how `.gitignore` works. What you define in reality is a filter that is matched against all files and folders in the checked out git repo. This means that you can add paths like `*.py` or `*.md` or any other syntax that `.gitignore` syntax supports and it will be used as a filter for what files is visible. Remember that a subfolder that has a matching file within it will be created even if that filename is not matching any provided path. Same the other way around that if you specify `tests/` as a path it will include all sub folders & files even if they don't match any filter.
+
 
 ### Run unitest suite & Tox
 

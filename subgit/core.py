@@ -26,6 +26,18 @@ from subgit.exceptions import *
 log = logging.getLogger(__name__)
 
 
+def run_cmd(cli_command):
+    process = Popen(
+        cli_command,
+        stdout=PIPE,
+        stderr=None,
+        shell=True,
+    )
+    output, stderr = process.communicate()
+
+    return output, stderr
+
+
 class SubGit():
     def __init__(self, config_file_path=None, answer_yes=False):
         self.answer_yes = answer_yes
@@ -158,15 +170,9 @@ class SubGit():
                 file_cwd = Path().cwd() / repo_name / ".git/FETCH_HEAD"
 
                 if file_cwd.exists():
-                    command = f"stat -c %y {file_cwd}"
-                    process = Popen(
-                        command,
-                        stdout=PIPE,
-                        stderr=None,
-                        shell=True,
-                    )
-                    output, stderr = process.communicate()
+                    output, stderr = run_cmd(f"stat -c %y {file_cwd}")
                     parsed_output = str(output).replace('\\n', '')
+
                     print(f"  Last pull/fetch: {parsed_output}")
                 else:
                     print("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
@@ -585,6 +591,28 @@ class SubGit():
                 log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
                 log.info(f"Current commit summary on HEAD in git repo '{name}': ")
                 log.info(f"  {str(repo.head.commit.summary)}")
+
+            # Handle sparse checkout by configure the repo
+            sparse_repo_config = repo_data.get("sparse", None)
+
+            if sparse_repo_config:
+                log.info(f"Enable sparse checkout on repo {name}")
+
+                # Always ensure that sparse is enabled
+                g.sparse_checkout("init")
+
+                repos = [
+                    str(path)
+                    for path in sparse_repo_config["paths"]
+                ]
+
+                # Set what paths we defined to be checked out
+                g.sparse_checkout("set", *repos)
+            else:
+                # By always setting disable as a default, this will automatically revert any repo
+                # that used to have sparse enabled but no longer is ensabled
+                log.debug(f"Disabling sparse checkout on repo {name}")
+                g.sparse_checkout("disable")
 
     def delete(self, repo_names=None):
         """
