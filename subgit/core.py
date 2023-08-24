@@ -10,19 +10,18 @@ from multiprocessing import Pool
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-# subgit imports
-from subgit.constants import *
-from subgit.enums import *
-from subgit.exceptions import *
-
 # 3rd party imports
 import git
 import packaging
-from git import Repo, Git
+from git import Git, Repo
 from packaging import version
 from packaging.specifiers import SpecifierSet
 from ruamel import yaml
 
+# subgit imports
+from subgit.constants import *
+from subgit.enums import *
+from subgit.exceptions import *
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class SubGit():
         else:
             self.subgit_config_file_name = ".subgit.yml"
             self.subgit_config_file_path = Path.cwd() / ".subgit.yml"
-    
+
     def _get_recursive_config_path(self):
         """
         Looks for either .sgit.yml or .subgit.yml recursively
@@ -456,7 +455,7 @@ class SubGit():
                     )
                     log.info(f'Successfully cloned repo "{name}" from remote server')
                 except Exception as e:
-                    raise SubGitException(f'Clone "{name}" failed, exception: {e}')
+                    raise SubGitException(f'Clone "{name}" failed, exception: {e}') from e
 
             log.debug("TODO: Parse for any changes...")
             # TODO: Check that origin remote exists
@@ -559,9 +558,7 @@ class SubGit():
 
                 # Main tag parsing logic
 
-                git_repo_tags = [
-                    tag for tag in repo.tags
-                ]
+                git_repo_tags = list(repo.tags)
                 log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
                 filter_output = self._filter(git_repo_tags, filter_config)
@@ -774,7 +771,7 @@ class SubGit():
         Method to return two lists of repos.
         One that contains the names of the repos specified in subgit command.
         One that contains all repos listed in the working subgit config file.
-        
+
         Example purpose is to easier check if the repo(s) specified in the subgit command,
         exists in the subgit config file. etc.
         """

@@ -36,12 +36,9 @@ setup(
             "pytest-mock",
             "mock",
             "tox",
-            "black",
-            "isort",
-            "flake8",
         ],
         "dev": [
-            "pylint",
+            "ruff>=0.0.285"
             "ptpython",
         ],
         "validation": [

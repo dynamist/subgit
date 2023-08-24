@@ -8,7 +8,7 @@ import sys
 import traceback
 
 # 3rd party imports
-from docopt import docopt, extras, Option, DocoptExit
+from docopt import DocoptExit, Option, docopt, extras
 
 base_args = """
 Usage:
@@ -274,10 +274,10 @@ def run(cli_args, sub_args):
         github = sub_args["github"]
         gitlab = sub_args["gitlab"]
         owner = sub_args["<owner>"]
-        
+
         if github:
             retcode = git_inspect.inspect_github(owner)
-        
+
         if gitlab:
             retcode = git_inspect.inspect_gitlab(owner)
 
@@ -286,7 +286,7 @@ def run(cli_args, sub_args):
         repos = repos or None
 
         retcode = core.clean(
-            repo_names=repos, 
+            repo_names=repos,
             recurse_into_dir=sub_args.get("-d"),
             force=sub_args.get("--force"),
             dry_run=sub_args.get("--dry-run"),

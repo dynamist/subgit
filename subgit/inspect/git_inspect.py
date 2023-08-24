@@ -5,12 +5,11 @@ import json
 import logging
 import subprocess
 
-# subgit imports
-from subgit.core import SubGit
-
 # 3rd party imports
 from ruamel import yaml
 
+# subgit imports
+from subgit.core import SubGit
 
 log = logging.getLogger(__name__)
 
