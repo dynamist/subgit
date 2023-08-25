@@ -173,11 +173,11 @@ Requirement for a merge request
 
 This feature requires you to have git version `2.25.0` or later
 
-A in-depth blog about `sparse-checkout` in general can be read [here by github.blog](https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/)
+A in-depth blog about sparse checkout in general can be read [here by github.blog](https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/)
 
-The main idea with `sparse-checkout` feature is to reduce down the size of mono repos into more manageable chunks of both output files in your file tree, but also to enable less git refs to clone.
+The main idea with sparse checkout feature is to reduce the size of mono repos into more manageable chunks of both output files in your file tree, but also to enable less git refs to clone.
 
-By adding the key `sparse.paths` to your repo config, you can define what folders that should be visible in the pulled file tree.
+By adding the key `sparse.paths` to your repo config, you define which folders should be pulled into the file tree.
 
 ```
 # Example config file
@@ -192,9 +192,9 @@ repos:
         - "tests/"
  ```
 
-This example would clone the entire repo, all git refs within it and enable `sparse-checkout` on the cloned repo at that given revision (could be branch, commit or tag) and then configure the git clone to have the two folders `phabfive/` and `tests/` as what is visible in the tree.
+This example would clone the entire repo, all the git refs and utilize sparse checkout on the repo at that given revision (could be branch, commit or tag) and then configure the git clone to have the two folders `phabfive/` and `tests/` pulled into the file tree.
 
-The paths you define works similar to how `.gitignore` works. What you define in reality is a filter that is matched against all files and folders in the checked out git repo. This means that you can add paths like `*.py` or `*.md` or any other syntax that `.gitignore` syntax supports and it will be used as a filter for what files is visible. Remember that a subfolder that has a matching file within it will be created even if that filename is not matching any provided path. Same the other way around that if you specify `tests/` as a path it will include all sub folders & files even if they don't match any filter.
+The paths you define works similar to how `.gitignore` works. What you define in reality is a filter that is matched against all files and folders in the checked out repo. This means that you can add paths like `*.py` or `*.md` or any other syntax that `.gitignore` syntax supports and it will be used as a filter for what files is pulled into the file tree. Remember that a subfolder that has a matching file within will be created even if that filename is not matching any provided path. Similarly, the other way around that if you specify `tests/` as a path it will include all sub folders & files even if they don't match the filter.
 
 
 ### Run unitest suite & Tox
