@@ -38,7 +38,7 @@ setup(
             "tox",
         ],
         "dev": [
-            "ruff>=0.0.285"
+            "ruff>=0.0.285",
             "ptpython",
         ],
         "validation": [
