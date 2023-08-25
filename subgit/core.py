@@ -22,6 +22,8 @@ from ruamel import yaml
 from subgit.constants import *
 from subgit.enums import *
 from subgit.exceptions import *
+from subgit.repo import SubGitRepo
+
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class SubGit():
             self.subgit_config_file_name = ".subgit.yml"
             self.subgit_config_file_path = Path.cwd() / ".subgit.yml"
 
-    def _get_recursive_config_path(self):
+    def _resolve_recursive_config_path(self):
         """
         Looks for either .sgit.yml or .subgit.yml recursively
         """
@@ -96,7 +98,6 @@ class SubGit():
         .subgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
         """
-
         if self.subgit_config_file_path.exists():
             log.error(f"File '{self.subgit_config_file_name}' already exists on disk")
             return 1
@@ -140,36 +141,36 @@ class SubGit():
                 default_flow_style=False,
             )
 
-    def repo_status(self):
-        self._get_recursive_config_path()
-        config = self._get_config_file()
-        repos = config.get("repos", {})
+    def build_repo_objects(self, repos_config):
+        repos = []
 
-        if not repos:
-            print("  No repos found")
+        for repo_data in repos_config["repos"]:
+            repo = SubGitRepo(repo_data)
+            repos.append(repo)
+
+        return repos
+
+    def repo_status(self):
+        self._resolve_recursive_config_path()
+        config = self._get_config_file()
+
+        repos = self.build_repo_objects(config)
+
+        if len(repos) == 0:
+            print("  No data for repositories found in config file")
             return 1
 
-        for repo_data in repos:
-            repo_name = repo_data["name"]
+        for repo in repos:
+            print("")
+            print(f"{repo.name}")
+            print(f"  {repo.url}")
+            print(f"  {repo.repo_root().resolve()}")
+            print(f"  Is cloned to disk? {repo.is_cloned_to_disk_str()}")
 
-            print(f"{repo_name}")
-            print(f"  Url: {repo_data.get('url', 'NOT SET')}")
+            if repo.is_cloned_to_disk:
+                fetch_file_path = repo.git_fetch_head_file_path
 
-            repo_disk_path = Path().cwd() / repo_name
-            print(f"  Disk path: {repo_disk_path}")
-
-            try:
-                repo = Repo(repo_disk_path)
-                cloned_to_disk = True
-            except git.exc.NoSuchPathError:
-                cloned_to_disk = False
-
-            print(f"  Cloned: {'Yes' if cloned_to_disk else 'No'}")
-
-            if cloned_to_disk:
-                file_cwd = Path().cwd() / repo_name / ".git/FETCH_HEAD"
-
-                if file_cwd.exists():
+                if fetch_file_path.exists():
                     output, stderr = run_cmd(f"stat -c %y {file_cwd}")
                     parsed_output = str(output).replace('\\n', '')
 
@@ -179,61 +180,48 @@ class SubGit():
             else:
                 print("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
-            if cloned_to_disk:
-                repo = Repo(repo_disk_path)
-                print(f"  Repo is dirty? {'Yes' if repo.is_dirty() else 'No'}")
-            else:
-                print("  Repo is dirty? ---")
+            print(f"  Repo is dirty? {repo.is_git_repo_dirty_str()}")
+            print(f"  Revision:")
 
-            branch = repo_data['revision'].get('branch', '---')
-            commit = repo_data['revision'].get('commit', '---')
-            tag = repo_data['revision'].get('tag', '---')
+            if repo.revision_type == REVISION_BRANCH:
+                print(f"    branch: {repo.revision_value}")
 
-            print("  Revision:")
-
-            print(f"    branch: {branch}")
-            if branch != "---":
-                if cloned_to_disk:
+                if repo.is_cloned_to_disk:
                     if branch in repo.heads:
-                        commit_hash = str(repo.heads[branch].commit)
-                        commit_message = str(repo.heads[branch].commit.summary)
-                        has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
+                        git_commit = repo.git_repo.heads[self.revision_value].commit
+
+                        commit_hash = str(git_commit)
+                        commit_message = str(git_commit.summary)
+                        has_newer_commit = repo.git_repo.remotes.origin.refs["master"].commit != git_commit
                         is_in_origin = f"{branch in repo.remotes.origin.refs}"
                     else:
                         commit_hash = "Local branch not found"
                         commit_message = "Local branch not found"
-                        has_new = "---"
+                        has_newer_commit = "---"
                         is_in_origin = "Local branch not found"
                 else:
                     commit_hash = "Repo not cloned to disk"
                     commit_message = "Repo not cloned to disk"
-                    has_new = "Repo not cloned to disk"
+                    has_newer_commit = "Repo not cloned to disk"
                     is_in_origin = "Repo not cloned to disk"
 
                 print(f"      commit hash: {commit_hash}")
                 print(f"      commit message: '{commit_message}'")
                 print(f"      branch exists in origin? {is_in_origin}")
-                print(f"      has newer commit in origin? {has_new}")
+                print(f"      has newer commit in origin? {has_newer_commit}")
 
-            print(f"    commit: {commit}")
-            if commit != "---":
-                print("FIXME: Not implemented yet")
+            if repo.revision_type == REVISION_COMMIT:
+                print("     FIXME: Not implemented yet")
+                print(f"    commit: {repo.revision_value}")
 
-            # Extract tag from inner value if that is set
-            #  {revision: {tag: {select: {value: foo}}}}
-            if isinstance(tag, dict):
-                tag = tag["select"]
+            if repo.revision_type == REVISION_TAG:
+                print(f"    tag: {repo.revision_value}")
 
-                if isinstance(tag, dict):
-                    tag = tag["value"]
-
-            print(f"    tag: {tag}")
-
-            if tag != "---":
-                if cloned_to_disk:
-                    if tag in repo.tags:
-                        commit_hash = str(repo.tags[tag].commit)
-                        commit_summary = str(repo.tags[tag].commit.summary)
+                if repo.is_cloned_to_disk:
+                    if repo.revision_value in repo.git_repo.tags:
+                        tags_commit = repo.git_repo.tags[repo.revision_value].commit
+                        commit_hash = str(tags_commit)
+                        commit_summary = str(tags_commit.summary)
                     else:
                         commit_hash = "Tag not found"
                         commit_summary = "---"
@@ -242,9 +230,7 @@ class SubGit():
                     commit_summary = "Repo not cloned to disk"
 
                 print(f"      commit hash: {commit_hash}")
-                print(f"      commit message: '{commit_summary}'")
-
-            print("")
+                print(f"      commit message: {commit_summary}")
 
     def yes_no(self, question):
         print(question)
@@ -267,7 +253,7 @@ class SubGit():
 
         A empty list of items will not fetch any repo.
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
 
         log.debug(f"repo fetch input - {repos}")
 
@@ -345,7 +331,7 @@ class SubGit():
 
         To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
 
         log.debug(f"Repo pull - {names}")
 
@@ -635,7 +621,7 @@ class SubGit():
         more of them creates a conflict. (e.g repo(s) is not in the config file,
         path(s) is not to a valid git repo or repo(s) is dirty)
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
         has_dirty_repos = False
         good_repos = []
         repos_dict = self._get_repos(repo_names)
@@ -669,7 +655,7 @@ class SubGit():
         Will take a list of repos and find any diffs and reset them back
         to the same state they were when they were first pulled.
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
         dirty_repos = []
         repos_dict = self._get_repos(repo_names)
         repos = repos_dict["repos"]
@@ -709,7 +695,7 @@ class SubGit():
         """
         Method to look through a list of repos and remove untracked files
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
         dirty_repos = []
         recursive_flag = "d" if recurse_into_dir else ""
         force_flag = "f" if force else ""
