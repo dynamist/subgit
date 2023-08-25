@@ -31,12 +31,7 @@ setup(
     ],
     python_requires=">=3.8",
     extras_require={
-        "test": [
-            "pytest",
-            "pytest-mock",
-            "mock",
-            "tox",
-        ],
+        "test": ["pytest", "pytest-mock", "mock", "tox", "tox-gh-actions"],
         "dev": [
             "ruff>=0.0.285",
             "ptpython",
