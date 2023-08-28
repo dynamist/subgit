@@ -171,7 +171,7 @@ class SubGit():
                 fetch_file_path = repo.git_fetch_head_file_path
 
                 if fetch_file_path.exists():
-                    output, stderr = run_cmd(f"stat -c %y {file_cwd}")
+                    output, stderr = run_cmd(f"stat -c %y {fetch_file_path}")
                     parsed_output = str(output).replace('\\n', '')
 
                     print(f"  Last pull/fetch: {parsed_output}")
