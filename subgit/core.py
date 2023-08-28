@@ -153,7 +153,6 @@ class SubGit():
     def repo_status(self):
         self._resolve_recursive_config_path()
         config = self._get_config_file()
-
         repos = self.build_repo_objects(config)
 
         if len(repos) == 0:
@@ -243,70 +242,52 @@ class SubGit():
 
         return answer.lower().startswith("y")
 
-    def fetch(self, repos):
+    def fetch(self, repos_to_fetch):
         """
-        Runs "git fetch" on one or more git repos.
+        Runs "git fetch" on one or more git repos
 
-        To fetch all enabled repos send in None as value.
+        To fetch all enabled repos send in None as value
 
-        To fetch a subset of repo names, send in them as a list of strings.
+        To fetch a subset of repo names, send in them as a list of strings
 
-        A empty list of items will not fetch any repo.
+        A empty list of items will not fetch any repo
         """
+        log.debug(f"Repo names fetch input - {repos_to_fetch}")
+        
         self._resolve_recursive_config_path()
-
-        log.debug(f"repo fetch input - {repos}")
-
         config = self._get_config_file()
+        repos = self.build_repo_objects(config)
 
-        repos_to_fetch = []
+        if isinstance(repos_to_fetch, list):
+            # If we provide a list of repos we need to filter them out from all repo objects
+            repos = list(filter(lambda obj: obj.name in repos_to_fetch, repos))
 
-        if repos is None:
-            for repo_data in config["repos"]:
-                repo_name = repo_data["name"]
-                repos_to_fetch.append(repo_name)
+        log.info(f"Git repos to fetch: {repos}")
 
-        if isinstance(repos, list):
-            for repo_data in repos:
-                repo_name = repo_data["name"]
-
-                if repo_name in config["repos"]:
-                    repos_to_fetch.append(repo_name)
-                else:
-                    log.warning(f"repo '{repo_name}' not found in configuration")
-
-        log.info(f"repos to fetch: {repos_to_fetch}")
-
-        if len(repos_to_fetch) == 0:
-            log.error("No repos to fetch found")
+        if len(repos) == 0:
+            log.critical("No repos found to filter out. Check config file and cli arguments")
             return 1
 
         missing_any_repo = False
 
-        for repo_name in repos_to_fetch:
-            try:
-                repo_path = Path().cwd() / repo_name
-                Repo(repo_path)
-            except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
+        for repo in repos:
+            if not repo.is_cloned_to_disk:
+                log.error(f"Repo {repo.name} not found on disk. You must pull to do a initial clone before fetching can be done")
                 missing_any_repo = True
 
         if missing_any_repo:
             return 1
 
         with Pool(WORKER_COUNT) as pool:
-            pool.map(self.fetch_repo, repos_to_fetch)
+            pool.map(self.fetch_repo, repos)
 
-        log.info("Fetching for all repos completed")
+        log.info("Fetch command run on all git repos completed")
         return 0
 
-    def fetch_repo(self, repo_name):
-        repo_path = Path().cwd() / repo_name
-        git_repo = Repo(repo_path)
-
-        log.info(f"Fetching git repo '{repo_name}'")
-        fetch_results = git_repo.remotes.origin.fetch()
-        log.info(f"Fetching completed for repo '{repo_name}'")
+    def fetch_repo(self, repo):
+        log.info(f"Fetching git repo '{repo.name}'")
+        fetch_results = repo.git_repo.remotes.origin.fetch()
+        log.info(f"Fetching completed for repo '{repo.name}'")
 
         for fetch_result in fetch_results:
             log.info(f" - Fetch result: {fetch_result.name}")
