@@ -10,7 +10,6 @@ class SubGitRepo(object):
 
     def __init__(self, repo_config, *args, **kwargs):
         self.raw_config = repo_config
-
         self.repo_cwd = Path(".")
         self.name = repo_config.get("name", None)
         self.clone_point = Path(".")  # Clone point 
@@ -22,12 +21,7 @@ class SubGitRepo(object):
         self.sparse_checkout_config = repo_config.get("sparse", None)
         self.sparse_checkout_enabled = True if self.sparse_checkout_config else False
 
-        # try:
         self.refresh_git_repo()
-            # self.git_repo = Repo(self.repo_root())
-        #     self.is_cloned_to_disk = True
-        # except git.exc.NoSuchPathError:
-        #     self.is_cloned_to_disk = False
 
         # TODO: Simplify this to not be as repetetive as now
         repo_branch = repo_config["revision"].get("branch", None)

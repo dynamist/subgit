@@ -550,6 +550,9 @@ class SubGit():
                 log.debug(f"Disabling sparse checkout on repo {repo.name}")
                 repo.git.sparse_checkout("disable")
 
+    def _filter_for_selected_repos(self, repos, filter_list):
+        return list(filter(lambda repo: repo.name in filter_list, repos))
+
     def delete(self, repo_names=None):
         """
         Helper method that recieves a list of repos. Deletes them as long as not one or
@@ -557,33 +560,38 @@ class SubGit():
         path(s) is not to a valid git repo or repo(s) is dirty)
         """
         self._resolve_recursive_config_path()
+        config = self._get_config_file()
+        repos = self.build_repo_objects(config)
+        repos = self._filter_for_selected_repos(repos, repo_names)
+
         has_dirty_repos = False
         good_repos = []
-        repos_dict = self._get_repos(repo_names)
-        repos = repos_dict["repos"]
-        active_repos = repos_dict["active_repos"]
-        repo_choices = repos_dict["repo_choices"]
-        repo_paths = self._get_working_repos(repos, active_repos)
 
-        if not repo_paths:
+        if not repos:
+            log.critical(f"No git repos to delete selected")
             return 1
+
+        repo_choices = [
+            repo.name
+            for repo in repos
+        ]
 
         answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'?")
 
         if answer:
-            for path in repo_paths:
-                current_repo = Repo(path)
+            for repo in repos:
+                if not repo.is_cloned_to_disk:
+                    # This repo is already not present or cloned on disk, continue to next repo
+                    log.info(f"Git repo '{repo.name}' is already deleted on disk")
+                    continue
 
-                if self._check_remote(current_repo):
-                    has_dirty_repos = True
-                    log.critical(f"'{path.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+                if self._check_remote(repo.git_repo):
+                    # If repo is dirty, or uncommited changes, the folder can't be removed until that is fixed
+                    log.critical(f"'{repo.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion")
                 else:
-                    good_repos.append(path)
-
-            if not has_dirty_repos:
-                for repo in good_repos:
-                    shutil.rmtree(repo)
-                    log.info(f"Successfully removed repo: {path.name}")
+                    # If repo is clean then we try to delete it
+                    shutil.rmtree(repo.repo_root().resolve())
+                    log.info(f"Successfully removed folder: {repo.repo_root()} for repo '{repo.name}'")
 
     def reset(self, repo_names=None, hard_flag=None):
         """
@@ -706,6 +714,7 @@ class SubGit():
         differences in remote and local commits, and/or has any untracked files.
         """
         has_remote_difference = False
+
         for remote in repo.remotes:
             for branch in repo.branches:
                 try:
