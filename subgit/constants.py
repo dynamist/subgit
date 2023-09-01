@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 
-DEFAULT_REPO_DICT = {"repos": []}
+DEFAULT_REPO_DICT = {
+    "repos": [
+        {
+            "name": "subgit",
+            "url": "git@github.com:dynamist/subgit.git",
+            "revision": {
+                "branch": "master",
+            },
+        }
+    ]
+}
 
 REVISION_BRANCH = "branch"
 REVISION_COMMIT = "commit"
