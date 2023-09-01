@@ -325,7 +325,6 @@ class SubGit():
         elif isinstance(repos_to_pull, list):
             # Validate that all names we have sent in really exists in the config
             is_all_repos_valid = all([repo.name in repos_to_pull for repo in repos])
-            print(is_all_repos_valid)
 
             # If we send in a list of a subset of repos we want to pull, filter out the repos
             # that do not match these names

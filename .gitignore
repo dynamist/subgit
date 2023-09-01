@@ -140,3 +140,6 @@ bare/
 .idea/*
 code/
 _manifest/
+
+
+smoke_tests/
