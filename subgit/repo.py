@@ -12,7 +12,7 @@ class SubGitRepo(object):
         self.raw_config = repo_config
         self.repo_cwd = Path(".")
         self.name = repo_config.get("name", None)
-        self.clone_point = Path(".")  # Clone point 
+        self.clone_point = Path(repo_config.get("clone_point", "."))  # Clone point 
         self.is_enabled = repo_config.get("enable", True)
         self.url = repo_config.get("url", "NOT SET")  # repo url:en som git fattar
         self.revision_type = ""  # branch, tag, commit
@@ -99,7 +99,7 @@ class SubGitRepo(object):
         Combines repo_cwd + clone_point into the root folder that
         the repo should be cloned to
         """
-        return self.repo_cwd / self.name / self.clone_point
+        return self.repo_cwd / self.clone_point / self.name
 
     def print_status(self):
         pass
