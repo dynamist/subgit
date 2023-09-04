@@ -80,20 +80,17 @@ def smoke_test(c):
     # Move into this run:s folder
     os.chdir(run_tests_folder)
 
-    from subgit.core import SubGit
-
-    core = SubGit(".subgit.yml")
-    core.repo_status()
-    core.pull(None)
-    core.pull(["pyk"])
-    core.pull(["pykwalify"])
-    core.repo_status()
-    core.fetch(None)
-    core.fetch(["pyk"])
-    core.fetch(["pykwalify"])
-    core.clean(repo_names=None, recurse_into_dir=True, dry_run=True)
-    core.clean(repo_names=["pyk"], recurse_into_dir=True, dry_run=True)
-    core.clean(repo_names=["pykwalify"], recurse_into_dir=True, dry_run=True)
+    c.run("subgit status")
+    c.run("subgit pull")
+    c.run("subgit pull pyk")
+    c.run("subgit pull pykwalify")
+    c.run("subgit status")
+    c.run("subgit fetch")
+    c.run("subgit fetch pyk")
+    c.run("subgit fetch pykwalify")
+    c.run("subgit clean")
+    c.run("subgit clean pyk -d -n")
+    c.run("subgit clean pykwalify -d -n")
 
 
 @task
