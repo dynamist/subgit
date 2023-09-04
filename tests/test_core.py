@@ -2,6 +2,7 @@
 
 # python std lib
 import json
+import mock
 import os
 
 # subgit imports
@@ -79,7 +80,8 @@ def test_init_repo(subgit):
     with open(subgit.subgit_config_file_path, "r") as stream:
         content = yaml.load(stream)
 
-    assert content == DEFAULT_REPO_DICT
+    # We patch the DEFAULT_REPO_DICT in conftest to another value
+    assert content == {"repos": []}
 
 
 def test_init_repo_file_exists(subgit):

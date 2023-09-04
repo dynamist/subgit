@@ -156,15 +156,15 @@ class SubGit():
         repos = self._build_repo_objects(config)
 
         if len(repos) == 0:
-            print("  No data for repositories found in config file")
+            log.critical("  No data for repositories found in config file")
             return 1
 
         for repo in repos:
-            print("")
-            print(f"{repo.name}")
-            print(f"  {repo.url}")
-            print(f"  {repo.repo_root().resolve()}")
-            print(f"  Is cloned to disk? {repo.is_cloned_to_disk_str()}")
+            log.info("")
+            log.info(f"{repo.name}")
+            log.info(f"  {repo.url}")
+            log.info(f"  {repo.repo_root().resolve()}")
+            log.info(f"  Is cloned to disk? {repo.is_cloned_to_disk_str()}")
 
             if repo.is_cloned_to_disk:
                 fetch_file_path = repo.git_fetch_head_file_path
@@ -173,17 +173,17 @@ class SubGit():
                     output, stderr = run_cmd(f"stat -c %y {fetch_file_path}")
                     parsed_output = str(output).replace('\\n', '')
 
-                    print(f"  Last pull/fetch: {parsed_output}")
+                    log.info(f"  Last pull/fetch: {parsed_output}")
                 else:
-                    print("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
+                    log.info("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
             else:
-                print("  Last pull/fetch: UNKNOWN repo not cloned to disk")
+                log.info("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
-            print(f"  Repo is dirty? {repo.is_git_repo_dirty_str()}")
-            print(f"  Revision:")
+            log.info(f"  Repo is dirty? {repo.is_git_repo_dirty_str()}")
+            log.info(f"  Revision:")
 
             if repo.revision_type == REVISION_BRANCH:
-                print(f"    branch: {repo.revision_value}")
+                log.info(f"    branch: {repo.revision_value}")
 
                 if repo.is_cloned_to_disk:
                     if repo.revision_value in repo.git_repo.heads:
@@ -204,17 +204,17 @@ class SubGit():
                     has_newer_commit = "Repo not cloned to disk"
                     is_in_origin = "Repo not cloned to disk"
 
-                print(f"      commit hash: {commit_hash}")
-                print(f"      commit message: '{commit_message}'")
-                print(f"      branch exists in origin? {is_in_origin}")
-                print(f"      has newer commit in origin? {has_newer_commit}")
+                log.info(f"      commit hash: {commit_hash}")
+                log.info(f"      commit message: '{commit_message}'")
+                log.info(f"      branch exists in origin? {is_in_origin}")
+                log.info(f"      has newer commit in origin? {has_newer_commit}")
 
             if repo.revision_type == REVISION_COMMIT:
-                print("     FIXME: Not implemented yet")
-                print(f"    commit: {repo.revision_value}")
+                log.info("     FIXME: Not implemented yet")
+                log.info(f"    commit: {repo.revision_value}")
 
             if repo.revision_type == REVISION_TAG:
-                print(f"    tag: {repo.revision_value}")
+                log.info(f"    tag: {repo.revision_value}")
 
                 if repo.is_cloned_to_disk:
                     if repo.revision_value in repo.git_repo.tags:
@@ -228,11 +228,11 @@ class SubGit():
                     commit_hash = "Repo not cloned to disk"
                     commit_summary = "Repo not cloned to disk"
 
-                print(f"      commit hash: {commit_hash}")
-                print(f"      commit message: {commit_summary}")
+                log.info(f"      commit hash: {commit_hash}")
+                log.info(f"      commit message: {commit_summary}")
 
     def yes_no(self, question):
-        print(question)
+        log.info(question)
 
         if self.answer_yes:
             log.info("--yes flag set, automatically answer yes to question")
@@ -345,7 +345,6 @@ class SubGit():
 
         for repo in repos:
             # If the path do not exists then the repo can't be dirty
-            # if not repo_path.exists():
             if not repo.repo_root().exists():
                 continue
 
