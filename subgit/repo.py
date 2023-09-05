@@ -12,7 +12,7 @@ class SubGitRepo(object):
         self.raw_config = repo_config
         self.repo_cwd = Path(".")
         self.name = repo_config.get("name", None)
-        self.clone_point = Path(repo_config.get("clone_point", "."))  # Clone point 
+        self.path = Path(repo_config.get("path", "."))  # Clone point 
         self.is_enabled = repo_config.get("enable", True)
         self.url = repo_config.get("url", "NOT SET")  # repo url:en som git fattar
         self.revision_type = ""  # branch, tag, commit
@@ -88,18 +88,12 @@ class SubGitRepo(object):
     def is_git_repo_dirty(self):
         return self.git_repo.is_dirty()
 
-    def is_git_repo_dirty_str(self):
-        return "Yes" if self.is_git_repo_dirty else "No"
-
-    def is_cloned_to_disk_str(self):
-        return "Yes" if self.is_cloned_to_disk else "No"
-
     def repo_root(self):
         """
-        Combines repo_cwd + clone_point into the root folder that
+        Combines repo_cwd + path into the root folder that
         the repo should be cloned to
         """
-        return self.repo_cwd / self.clone_point / self.name
+        return self.repo_cwd / self.path / self.name
 
     def print_status(self):
         pass

@@ -23,6 +23,7 @@ from subgit.constants import *
 from subgit.enums import *
 from subgit.exceptions import *
 from subgit.repo import SubGitRepo
+from subgit.utils import bool_to_str
 
 
 log = logging.getLogger(__name__)
@@ -164,7 +165,7 @@ class SubGit():
             log.info(f"{repo.name}")
             log.info(f"  {repo.url}")
             log.info(f"  {repo.repo_root().resolve()}")
-            log.info(f"  Is cloned to disk? {repo.is_cloned_to_disk_str()}")
+            log.info(f"  Is cloned to disk? {bool_to_str(repo.is_cloned_to_disk)}")
 
             if repo.is_cloned_to_disk:
                 fetch_file_path = repo.git_fetch_head_file_path
@@ -179,7 +180,7 @@ class SubGit():
             else:
                 log.info("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
-            log.info(f"  Repo is dirty? {repo.is_git_repo_dirty_str()}")
+            log.info(f"  Repo is dirty? {bool_to_str(repo.is_git_repo_dirty)}")
             log.info(f"  Revision:")
 
             if repo.revision_type == REVISION_BRANCH:
