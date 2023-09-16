@@ -18,13 +18,14 @@ setup(
     url="http://github.com/dynamist/sgit",
     entry_points={
         "console_scripts": [
-            "git-sub = subgit.cli:docopt_entrypoint",
-            "sgit = subgit.cli:docopt_entrypoint",
-            "subgit = subgit.cli:docopt_entrypoint",
+            "git-sub = subgit.cli:click_entrypoint",
+            "sgit = subgit.cli:click_entrypoint",
+            "subgit = subgit.cli:click_entrypoint",
         ],
     },
     install_requires=[
         "docopt>=0.6.2",
+        "rich-click>=1.6.1",
         "ruamel.yaml>=0.16.0",
         "gitpython>=3.1.0",
         "packaging>=21.3",

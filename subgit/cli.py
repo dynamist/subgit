@@ -319,3 +319,94 @@ def docopt_entrypoint():
             print(f"EXCEPTION MESSAGE: {ex_value}")
             print("To get more detailed exception set environment variable 'DEBUG=1'")
             print("To PDB debug set environment variable 'PDB=1'")
+
+import click
+import subgit
+from subgit.core import SubGit
+
+core = SubGit(
+#    config_file_path=sub_args.get("--conf"),
+#    answer_yes=sub_args.get("--yes"),
+)
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.group(context_settings=CONTEXT_SETTINGS)
+@click.version_option(version=subgit.__version__)
+def sgit():
+    pass
+
+#@click.option("-c", "--conf", type=click.Path(), help="For using optional config file (use if conf file is something other than '.subgit.yml' or '.sgit.yml')")
+#@click.option("-y", "--yes", is_flag=True, help="Answers yes to all questions (use with caution)")
+
+@sgit.command()
+@click.argument("repos", nargs=-1)
+def fetch(repos):
+    """Fetch one or all Git repos"""
+    print(repos)
+
+# TODO require both name and url
+@sgit.command()
+@click.argument("name", required=False)
+@click.argument("url", required=False)
+def init(name, url):
+    """Initialize a new subgit repo"""
+    print(f"{name} {url}")
+
+@sgit.command()
+@click.argument("repos", nargs=-1)
+def pull(repos):
+    """Update one or all Git repos"""
+    print(repos)
+
+@sgit.command()
+def status():
+    """Show status of each configured repo"""
+    pass
+
+@sgit.command()
+@click.argument("repos", nargs=-1)
+def delete(repos):
+    """Delete one or more local Git repos"""
+    print(repos)
+
+@sgit.command()
+@click.argument("repos", nargs=-1)
+def reset(repos):
+    """Reset repo(s) previous tracked state"""
+    print(repos)
+
+@sgit.command()
+@click.argument("repos", nargs=-1)
+@click.option("-d", is_flag=True, help="Normally, when no <pathspec> is specified, git clean will not recurse into untracked directories to avoid removing too much. Specify -d to have it recurse into such directories as well. If a <pathspec> is specified, -d is irrelevant; all untracked files matching the specified paths (with exceptions for nested git directories mentioned under --force) will be removed.")
+@click.option("-f", "--force", is_flag=True, help="If the Git configuration variable clean.requireForce is not set to false, git clean will refuse to delete files or directories unless given -f or -i. Git will refuse to modify untracked nested git repositories (directories with a .git subdirectory) unless a second -f is given.")
+@click.option("-n", "--dry-run", is_flag=True, help="Don’t actually remove anything, just show what would be done.")
+def clean(repos, d, force, dry_run):
+    """Clean repo(s) from untracked files"""
+    print(repos)
+
+
+@click.group(context_settings=CONTEXT_SETTINGS)
+@click.version_option(version=subgit.__version__)
+def inspect():
+    """Listing repos from github or gitlab"""
+    pass
+
+@inspect.command('github')
+@click.argument("owner")
+@click.option("-a", "--archived", is_flag=True, help="Writes only archived repos to output file")
+def inspect_github(owner, archived):
+    """Listing repos from github"""
+    print(owner)
+
+@inspect.command('gitlab')
+@click.argument("owner")
+@click.option("-a", "--archived", is_flag=True, help="Writes only archived repos to output file")
+def inspect_gitlab(owner, archived):
+    """Listing repos from gitlab"""
+    print(owner)
+
+
+def click_entrypoint():
+    sgit.add_command(inspect)
+    sgit(auto_envvar_prefix='SUBGIT')
