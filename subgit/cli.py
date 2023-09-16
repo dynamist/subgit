@@ -323,6 +323,7 @@ def docopt_entrypoint():
 import rich_click as click
 import subgit
 from subgit.core import SubGit
+from subgit.inspect.git_inspect import GitInspect
 
 core = SubGit(
 #    config_file_path=sub_args.get("--conf"),
@@ -343,38 +344,49 @@ def sgit():
 @click.argument("repos", nargs=-1)
 def fetch(repos):
     """Fetch one or all Git repos"""
-    print(repos)
+    retcode = core.fetch(
+        repos,
+    )
 
 # TODO require both name and url
 @sgit.command()
-@click.argument("name", required=False)
-@click.argument("url", required=False)
+@click.argument("name")
+@click.argument("url")
 def init(name, url):
     """Initialize a new subgit repo"""
-    print(f"{name} {url}")
+    retcode = core.init_repo(
+        name,
+        url,
+    )
 
 @sgit.command()
 @click.argument("repos", nargs=-1)
 def pull(repos):
     """Update one or all Git repos"""
-    print(repos)
+    retcode = core.pull(repos)
 
 @sgit.command()
 def status():
     """Show status of each configured repo"""
-    pass
+    retcode = core.repo_status()
 
 @sgit.command()
 @click.argument("repos", nargs=-1)
 def delete(repos):
     """Delete one or more local Git repos"""
-    print(repos)
+    retcode = core.delete(
+        repo_names=repos,
+    )
 
 @sgit.command()
 @click.argument("repos", nargs=-1)
+@click.option("--hard", is_flag=True, help="Resets the index and working tree. Any changes to tracked files in the working tree since <commit> are discarded. Any untracked files or directories in the way of writing any tracked files are simply deleted.")
 def reset(repos):
     """Reset repo(s) previous tracked state"""
-    print(repos)
+    retcode = core.reset(
+        repo_names=repos,
+        hard_flag=hard,
+    )
 
 @sgit.command()
 @click.argument("repos", nargs=-1)
@@ -383,7 +395,12 @@ def reset(repos):
 @click.option("-n", "--dry-run", is_flag=True, help="Don’t actually remove anything, just show what would be done.")
 def clean(repos, d, force, dry_run):
     """Clean repo(s) from untracked files"""
-    print(repos)
+    retcode = core.clean(
+        repo_names=repos,
+        recurse_into_dir=d,
+        force=force,
+        dry_run=dry_run,
+    )
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -397,14 +414,20 @@ def inspect():
 @click.option("-a", "--archived", is_flag=True, help="Writes only archived repos to output file")
 def inspect_github(owner, archived):
     """Listing repos from github"""
-    print(owner)
+    git_inspect = GitInspect(
+        is_archived=archived,
+    )
+    retcode = git_inspect.inspect_github(owner)
 
 @inspect.command('gitlab')
 @click.argument("owner")
 @click.option("-a", "--archived", is_flag=True, help="Writes only archived repos to output file")
 def inspect_gitlab(owner, archived):
     """Listing repos from gitlab"""
-    print(owner)
+    git_inspect = GitInspect(
+        is_archived=archived,
+    )
+    retcode = git_inspect.inspect_gitlab(owner)
 
 
 def click_entrypoint():
