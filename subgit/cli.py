@@ -320,7 +320,7 @@ def docopt_entrypoint():
             print("To get more detailed exception set environment variable 'DEBUG=1'")
             print("To PDB debug set environment variable 'PDB=1'")
 
-import click
+import rich_click as click
 import subgit
 from subgit.core import SubGit
 
