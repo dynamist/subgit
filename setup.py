@@ -18,9 +18,9 @@ setup(
     url="http://github.com/dynamist/sgit",
     entry_points={
         "console_scripts": [
-            "git-sub = subgit.cli:cli_entrypoint",
-            "sgit = subgit.cli:cli_entrypoint",
-            "subgit = subgit.cli:cli_entrypoint",
+            "git-sub = subgit.cli:docopt_entrypoint",
+            "sgit = subgit.cli:docopt_entrypoint",
+            "subgit = subgit.cli:docopt_entrypoint",
         ],
     },
     install_requires=[

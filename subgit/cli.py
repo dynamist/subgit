@@ -295,7 +295,7 @@ def run(cli_args, sub_args):
     return retcode
 
 
-def cli_entrypoint():
+def docopt_entrypoint():
     """
     Used by setup.py to create a cli entrypoint script
     """
