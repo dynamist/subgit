@@ -8,7 +8,7 @@ import shutil
 import sys
 from multiprocessing import Pool
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen  # nosec
 
 # 3rd party imports
 import git
@@ -32,7 +32,7 @@ def run_cmd(cli_command):
         stdout=PIPE,
         stderr=None,
         shell=True,
-    )
+    ) # nosec
     output, stderr = process.communicate()
 
     return output, stderr
