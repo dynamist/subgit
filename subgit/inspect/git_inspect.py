@@ -3,7 +3,7 @@
 # python std lib
 import json
 import logging
-import subprocess  # nosec
+import subprocess  # nosec-B404
 
 # 3rd party imports
 from ruamel import yaml
@@ -36,7 +36,7 @@ class GitInspect(SubGit):
                 ],
                 shell=False,
                 capture_output=True,
-            ) # nosec
+            ) # nosec-B603
         except FileNotFoundError:
             return False
 
@@ -59,7 +59,7 @@ class GitInspect(SubGit):
             ],
             shell=False,
             capture_output=True,
-        ) # nosec
+        ) # nosec-B607
         data = json.loads(out.stdout)
         repos = {}
         mapped_data = {
@@ -118,7 +118,7 @@ class GitInspect(SubGit):
             ],
             shell=False,
             capture_output=True,
-        ) # nosec
+        ) # nosec-B607
         repos = {}
         data = json.loads(out.stdout)
         mapped_data = {
