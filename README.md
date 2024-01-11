@@ -135,6 +135,7 @@ You can reset repos in which changes have been made such as new files or new com
 
 ```bash
 # Reset all repos in sequence if they are dirty
+
 subgit reset
 
 # Reset one specified repo if it's dirty

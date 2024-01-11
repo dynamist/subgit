@@ -33,6 +33,7 @@ setup(
     extras_require={
         "test": ["pytest", "pytest-mock", "mock", "tox", "tox-gh-actions"],
         "dev": [
+            "invoke>=2.2.0",
             "ruff>=0.0.285",
             "ptpython",
         ],

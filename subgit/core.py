@@ -22,6 +22,9 @@ from ruamel import yaml
 from subgit.constants import *
 from subgit.enums import *
 from subgit.exceptions import *
+from subgit.repo import SubGitRepo
+from subgit.utils import bool_to_str
+
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +53,7 @@ class SubGit():
             self.subgit_config_file_name = ".subgit.yml"
             self.subgit_config_file_path = Path.cwd() / ".subgit.yml"
 
-    def _get_recursive_config_path(self):
+    def _resolve_recursive_config_path(self):
         """
         Looks for either .sgit.yml or .subgit.yml recursively
         """
@@ -96,7 +99,6 @@ class SubGit():
         .subgit.yml config file as the first repo in your config. If these values is anything else the initial
         config vill we written as empty.
         """
-
         if self.subgit_config_file_path.exists():
             log.error(f"File '{self.subgit_config_file_name}' already exists on disk")
             return 1
@@ -140,100 +142,86 @@ class SubGit():
                 default_flow_style=False,
             )
 
-    def repo_status(self):
-        self._get_recursive_config_path()
-        config = self._get_config_file()
-        repos = config.get("repos", {})
+    def _build_repo_objects(self, repos_config):
+        repos = []
 
-        if not repos:
-            print("  No repos found")
+        for repo_data in repos_config["repos"]:
+            repo = SubGitRepo(repo_data)
+            repos.append(repo)
+
+        return repos
+
+    def repo_status(self):
+        self._resolve_recursive_config_path()
+        config = self._get_config_file()
+        repos = self._build_repo_objects(config)
+
+        if len(repos) == 0:
+            log.critical("  No data for repositories found in config file")
             return 1
 
-        for repo_data in repos:
-            repo_name = repo_data["name"]
+        for repo in repos:
+            log.info("")
+            log.info(f"{repo.name}")
+            log.info(f"  {repo.url}")
+            log.info(f"  {repo.repo_root().resolve()}")
+            log.info(f"  Is cloned to disk? {bool_to_str(repo.is_cloned_to_disk)}")
 
-            print(f"{repo_name}")
-            print(f"  Url: {repo_data.get('url', 'NOT SET')}")
+            if repo.is_cloned_to_disk:
+                fetch_file_path = repo.git_fetch_head_file_path
 
-            repo_disk_path = Path().cwd() / repo_name
-            print(f"  Disk path: {repo_disk_path}")
-
-            try:
-                repo = Repo(repo_disk_path)
-                cloned_to_disk = True
-            except git.exc.NoSuchPathError:
-                cloned_to_disk = False
-
-            print(f"  Cloned: {'Yes' if cloned_to_disk else 'No'}")
-
-            if cloned_to_disk:
-                file_cwd = Path().cwd() / repo_name / ".git/FETCH_HEAD"
-
-                if file_cwd.exists():
-                    output, stderr = run_cmd(f"stat -c %y {file_cwd}")
+                if fetch_file_path.exists():
+                    output, stderr = run_cmd(f"stat -c %y {fetch_file_path}")
                     parsed_output = str(output).replace('\\n', '')
 
-                    print(f"  Last pull/fetch: {parsed_output}")
+                    log.info(f"  Last pull/fetch: {parsed_output}")
                 else:
-                    print("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
+                    log.info("  Last pull/fetch: Repo has not been pulled or fetch since initial clone")
             else:
-                print("  Last pull/fetch: UNKNOWN repo not cloned to disk")
+                log.info("  Last pull/fetch: UNKNOWN repo not cloned to disk")
 
-            if cloned_to_disk:
-                repo = Repo(repo_disk_path)
-                print(f"  Repo is dirty? {'Yes' if repo.is_dirty() else 'No'}")
-            else:
-                print("  Repo is dirty? ---")
+            log.info(f"  Repo is dirty? {bool_to_str(repo.is_git_repo_dirty)}")
+            log.info(f"  Revision:")
 
-            branch = repo_data['revision'].get('branch', '---')
-            commit = repo_data['revision'].get('commit', '---')
-            tag = repo_data['revision'].get('tag', '---')
+            if repo.revision_type == REVISION_BRANCH:
+                log.info(f"    branch: {repo.revision_value}")
 
-            print("  Revision:")
+                if repo.is_cloned_to_disk:
+                    if repo.revision_value in repo.git_repo.heads:
+                        git_commit = repo.git_repo.heads[repo.revision_value].commit
 
-            print(f"    branch: {branch}")
-            if branch != "---":
-                if cloned_to_disk:
-                    if branch in repo.heads:
-                        commit_hash = str(repo.heads[branch].commit)
-                        commit_message = str(repo.heads[branch].commit.summary)
-                        has_new = repo.remotes.origin.refs["master"].commit != repo.heads[branch].commit
-                        is_in_origin = f"{branch in repo.remotes.origin.refs}"
+                        commit_hash = str(git_commit)
+                        commit_message = str(git_commit.summary)
+                        has_newer_commit = repo.git_repo.remotes.origin.refs["master"].commit != git_commit
+                        is_in_origin = f"{repo.revision_value in repo.git_repo.remotes.origin.refs}"
                     else:
                         commit_hash = "Local branch not found"
                         commit_message = "Local branch not found"
-                        has_new = "---"
+                        has_newer_commit = "---"
                         is_in_origin = "Local branch not found"
                 else:
                     commit_hash = "Repo not cloned to disk"
                     commit_message = "Repo not cloned to disk"
-                    has_new = "Repo not cloned to disk"
+                    has_newer_commit = "Repo not cloned to disk"
                     is_in_origin = "Repo not cloned to disk"
 
-                print(f"      commit hash: {commit_hash}")
-                print(f"      commit message: '{commit_message}'")
-                print(f"      branch exists in origin? {is_in_origin}")
-                print(f"      has newer commit in origin? {has_new}")
+                log.info(f"      commit hash: {commit_hash}")
+                log.info(f"      commit message: '{commit_message}'")
+                log.info(f"      branch exists in origin? {is_in_origin}")
+                log.info(f"      has newer commit in origin? {has_newer_commit}")
 
-            print(f"    commit: {commit}")
-            if commit != "---":
-                print("FIXME: Not implemented yet")
+            if repo.revision_type == REVISION_COMMIT:
+                log.info("     FIXME: Not implemented yet")
+                log.info(f"    commit: {repo.revision_value}")
 
-            # Extract tag from inner value if that is set
-            #  {revision: {tag: {select: {value: foo}}}}
-            if isinstance(tag, dict):
-                tag = tag["select"]
+            if repo.revision_type == REVISION_TAG:
+                log.info(f"    tag: {repo.revision_value}")
 
-                if isinstance(tag, dict):
-                    tag = tag["value"]
-
-            print(f"    tag: {tag}")
-
-            if tag != "---":
-                if cloned_to_disk:
-                    if tag in repo.tags:
-                        commit_hash = str(repo.tags[tag].commit)
-                        commit_summary = str(repo.tags[tag].commit.summary)
+                if repo.is_cloned_to_disk:
+                    if repo.revision_value in repo.git_repo.tags:
+                        tags_commit = repo.git_repo.tags[repo.revision_value].commit
+                        commit_hash = str(tags_commit)
+                        commit_summary = str(tags_commit.summary)
                     else:
                         commit_hash = "Tag not found"
                         commit_summary = "---"
@@ -241,13 +229,11 @@ class SubGit():
                     commit_hash = "Repo not cloned to disk"
                     commit_summary = "Repo not cloned to disk"
 
-                print(f"      commit hash: {commit_hash}")
-                print(f"      commit message: '{commit_summary}'")
-
-            print("")
+                log.info(f"      commit hash: {commit_hash}")
+                log.info(f"      commit message: {commit_summary}")
 
     def yes_no(self, question):
-        print(question)
+        log.info(question)
 
         if self.answer_yes:
             log.info("--yes flag set, automatically answer yes to question")
@@ -257,130 +243,95 @@ class SubGit():
 
         return answer.lower().startswith("y")
 
-    def fetch(self, repos):
+    def fetch(self, repos_to_fetch):
         """
-        Runs "git fetch" on one or more git repos.
+        Runs "git fetch" on one or more git repos
 
-        To fetch all enabled repos send in None as value.
+        To fetch all enabled repos send in None as value
 
-        To fetch a subset of repo names, send in them as a list of strings.
+        To fetch a subset of repo names, send in them as a list of strings
 
-        A empty list of items will not fetch any repo.
+        A empty list of items will not fetch any repo
         """
-        self._get_recursive_config_path()
-
-        log.debug(f"repo fetch input - {repos}")
-
+        log.debug(f"Repo names fetch input - {repos_to_fetch}")
+        
+        self._resolve_recursive_config_path()
         config = self._get_config_file()
+        repos = self._build_repo_objects(config)
 
-        repos_to_fetch = []
+        if isinstance(repos_to_fetch, list):
+            # If we provide a list of repos we need to filter them out from all repo objects
+            repos = list(filter(lambda obj: obj.name in repos_to_fetch, repos))
 
-        if repos is None:
-            for repo_data in config["repos"]:
-                repo_name = repo_data["name"]
-                repos_to_fetch.append(repo_name)
+        log.info(f"Git repos to fetch: {repos}")
 
-        if isinstance(repos, list):
-            for repo_data in repos:
-                repo_name = repo_data["name"]
-
-                if repo_name in config["repos"]:
-                    repos_to_fetch.append(repo_name)
-                else:
-                    log.warning(f"repo '{repo_name}' not found in configuration")
-
-        log.info(f"repos to fetch: {repos_to_fetch}")
-
-        if len(repos_to_fetch) == 0:
-            log.error("No repos to fetch found")
+        if len(repos) == 0:
+            # TODO: Convert to an exception
+            log.critical("No repos found to filter out. Check config file and cli arguments")
             return 1
 
         missing_any_repo = False
 
-        for repo_name in repos_to_fetch:
-            try:
-                repo_path = Path().cwd() / repo_name
-                Repo(repo_path)
-            except git.exc.NoSuchPathError:
-                log.error(f"Repo {repo_name} not found on disk. You must pull to do a initial clone before fetching can be done")
+        for repo in repos:
+            if not repo.is_cloned_to_disk:
+                log.error(f"Repo {repo.name} not found on disk. You must pull to do a initial clone before fetching can be done")
                 missing_any_repo = True
 
         if missing_any_repo:
+            # TODO: Convert to an exception
             return 1
 
         with Pool(WORKER_COUNT) as pool:
-            pool.map(self.fetch_repo, repos_to_fetch)
+            pool.map(self._fetch_repo, repos)
 
-        log.info("Fetching for all repos completed")
+        log.info("Fetch command run on all git repos completed")
         return 0
 
-    def fetch_repo(self, repo_name):
-        repo_path = Path().cwd() / repo_name
-        git_repo = Repo(repo_path)
-
-        log.info(f"Fetching git repo '{repo_name}'")
-        fetch_results = git_repo.remotes.origin.fetch()
-        log.info(f"Fetching completed for repo '{repo_name}'")
+    def _fetch_repo(self, repo):
+        log.info(f"Fetching git repo '{repo.name}'")
+        fetch_results = repo.fetch_repo()
+        log.info(f"Fetching completed for repo '{repo.name}'")
 
         for fetch_result in fetch_results:
             log.info(f" - Fetch result: {fetch_result.name}")
 
-    def _get_active_repos(self, config):
+    def pull(self, repos_to_pull):
         """
-        Helper method that will return only the repos that is enabled and active for usage
+        To pull all repos defined in the configuration send in repos_to_pull=None
+
+        To pull a subset of repos send in a list of strings repos_to_pull=["repo1", "repo2"]
         """
-        active_repos = []
+        log.debug(f"Repo pull - {repos_to_pull}")
 
-        for repo_data in config.get("repos", []):
-            repo_name = repo_data["name"]
-
-            if repo_data.get("enable", True):
-                active_repos.append(repo_name)
-
-        return active_repos
-
-    def pull(self, names):
-        """
-        To pull all repos defined in the configuration send in names=None
-
-        To pull a subset of repos send in a list of strings names=["repo1", "repo2"]
-        """
-        self._get_recursive_config_path()
-
-        log.debug(f"Repo pull - {names}")
-
+        self._resolve_recursive_config_path()
         config = self._get_config_file()
+        repos = self._build_repo_objects(config)
 
-        active_repos = self._get_active_repos(config)
+        # Filter out any repo object that is not enabled
+        repos = list(filter(lambda obj: obj.is_enabled is True, repos))
 
-        repos = []
-
-        if len(active_repos) == 0:
+        if len(repos) == 0:
+            # TODO: Convert to an exception
             log.error("There is no repos defined or enabled in the config")
             return 1
 
-        if names is None:
-            repos = config.get("repos", [])
-            repo_choices = ", ".join(active_repos)
-
+        if repos_to_pull is None:
+            repo_choices = ", ".join([repo.name for repo in repos])
             answer = self.yes_no(f"Are you sure you want to 'git pull' the following repos '{repo_choices}'")
 
-            if not answer:
+            if answer is False:
+                # TODO: Convert to an exception
                 log.warning("User aborted pull step")
                 return 1
-        elif isinstance(names, list):
-            # Validate that all provided repo names exists in the config
-            for name in names:
-                if name not in active_repos:
-                    choices = ", ".join(active_repos)
-                    log.error(f'Repo with name "{name}" not found in config file. Choices are "{choices}"')
-                    return 1
+        elif isinstance(repos_to_pull, list):
+            # Validate that all names we have sent in really exists in the config
+            is_all_repos_valid = all([repo.name in repos_to_pull for repo in repos])
 
-                for repo_data in config["repos"]:
-                    if repo_data["name"] == name:
-                        repos.append(repo_data)
+            # If we send in a list of a subset of repos we want to pull, filter out the repos
+            # that do not match these names
+            repos = list(filter(lambda obj: obj.name in repos_to_pull, repos))
         else:
-            log.debug(f"Names {names}")
+            log.debug(f"Names {repos_to_pull}")
             raise SubGitConfigException("Unsuported value type for argument names")
 
         if not repos:
@@ -393,20 +344,18 @@ class SubGit():
 
         has_dirty = False
 
-        for repo_data in repos:
-            name = repo_data["name"]
-            repo_path = Path().cwd() / name
-
+        for repo in repos:
             # If the path do not exists then the repo can't be dirty
-            if not repo_path.exists():
+            if not repo.repo_root().exists():
                 continue
 
-            repo = Repo(repo_path)
-
             # A dirty repo means there is uncommited changes in the tree
-            if repo.is_dirty():
-                log.error(f'The repo "{name}" is dirty and has uncommited changes in the following files')
-                dirty_files = [item.a_path for item in repo.index.diff(None)]
+            if repo.git_repo.is_dirty():
+                log.error(f'The repo "{repo.name}" is dirty and has uncommited changes in the following files')
+                dirty_files = [
+                    item.a_path
+                    for item in repo.git_repo.index.diff(None)
+                ]
 
                 for file in dirty_files:
                     log.info(f" - {file}")
@@ -414,76 +363,44 @@ class SubGit():
                 has_dirty = True
 
         if has_dirty:
-            log.error("\nFound one or more dirty repos. Resolve it before continue...")
-            return 1
-
-        bad_repo_configs = []
-
-        for repo_data in repos:
-            name = repo_data["name"]
-            revision = repo_data["revision"]
-
-            if "branch" in revision:
-                if not revision["branch"]:
-                    bad_repo_configs.append(name)
-
-        if bad_repo_configs:
-            bad_repos_string = ", ".join(repo for repo in bad_repo_configs)
-            log.error(f"One or more repos in congif file has an invalid branch option... {bad_repos_string}")
+            # TODO: Convert to an exception
+            log.error("Found one or more dirty repos. Resolve it before continue...")
             return 1
 
         # Repos looks good to be pulled. Run the pull logic for each repo in sequence
-
-        for repo_data in repos:
-            name = repo_data["name"]
+        for repo in repos:
             log.info("")
-
-            repo_path = Path().cwd() / name
-            revision = repo_data["revision"]
 
             # Boolean value wether repo is newly cloned.
             cloned = False
 
-            if not repo_path.exists():
-                clone_url = repo_data.get("url", None)
+            if not repo.is_cloned_to_disk:
                 cloned = True
-
-                if not clone_url:
-                    raise SubGitConfigException(f"Missing required key 'url' on repo '{name}'")
 
                 try:
                     # Cloning a repo w/o a specific commit/branch/tag it will clone out whatever default
                     # branch or where the origin HEAD is pointing to. After we clone we can then move our
                     # repo to the correct revision we want.
-                    repo = Repo.clone_from(
-                        repo_data["url"],
-                        repo_path,
-                    )
-                    log.info(f'Successfully cloned repo "{name}" from remote server')
+                    repo.clone_repo()
+                    log.info(f'Successfully cloned repo "{repo.name}" from remote server')
                 except Exception as e:
-                    raise SubGitException(f'Clone "{name}" failed, exception: {e}') from e
+                    raise SubGitException(f'Clone "{repo.name}" failed') from e
 
             log.debug("TODO: Parse for any changes...")
             # TODO: Check that origin remote exists
 
-            p = Path().cwd() / name
-            repo = Repo(p)
-            g = Git(p)
-
             # Fetch all changes from upstream git repo
-            repo.remotes.origin.fetch()
+            repo.fetch_repo()
+            revision = repo.revision_value
 
             # How to handle the repo when a branch is specified
-            if "branch" in revision:
+            if repo.revision_type == REVISION_BRANCH:
                 log.debug("Handling branch pull case")
-
-                # Extract the sub tag data
-                branch_revision = revision["branch"]
 
                 if not cloned:
                     try:
-                        latest_remote_sha = str(repo.rev_parse(f"origin/{branch_revision}"))
-                        latest_local_sha = str(repo.head.commit.hexsha)
+                        latest_remote_sha = str(repo.git_repo.rev_parse(f"origin/{revision}"))
+                        latest_local_sha = str(repo.git_repo.head.commit.hexsha)
 
                         if latest_remote_sha != latest_local_sha:
                             repo.remotes.origin.pull()
@@ -491,20 +408,20 @@ class SubGit():
                         log.error(er)
 
                 # Ensure the local version of the branch exists and points to the origin ref for that branch
-                repo.create_head(f"{branch_revision}", f"origin/{branch_revision}")
+                repo.git_repo.create_head(f"{revision}", f"origin/{revision}")
 
                 # Checkout the selected revision
                 # TODO: This only support branches for now
-                repo.heads[branch_revision].checkout()
+                repo.git_repo.heads[revision].checkout()
 
-                log.info(f'Successfully pull repo "{name}" to latest commit on branch "{branch_revision}"')
-                log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
-            elif "tag" in revision:
+                log.info(f'Successfully pull repo "{repo.name}" to latest commit on branch "{repo.revision_value}"')
+                log.info(f"Current git hash on HEAD: {str(repo.git_repo.head.commit)}")
+            elif repo.revision_type == REVISION_TAG:
                 #
                 # Parse and extract out all relevant config options and determine if they are nested
                 # dicts or single values. The values will later be used as input into each operation.
                 #
-                tag_config = revision["tag"]
+                tag_config = repo.revision_value
 
                 if isinstance(tag_config, str):
                     # All options should be set to default'
@@ -525,6 +442,7 @@ class SubGit():
                         raise SubGitConfigException("filter option must be a list of items or a single string")
 
                     order_config = tag_config.get("order", None)
+
                     if order_config is None:
                         order_algorithm = OrderAlgorithms.SEMVER
                     else:
@@ -535,6 +453,7 @@ class SubGit():
 
                     select_config = tag_config.get("select", None)
                     select_method = None
+
                     if select_config is None:
                         raise SubGitConfigException("select key is required in all tag revisions")
 
@@ -552,9 +471,10 @@ class SubGit():
                         if select_method is None:
                             raise SubGitConfigException(f"Unsupported select method chosen: {select_method_value.upper()}")
                     else:
+                        # By default we should treat the select value as a semver string
                         select_method = SelectionMethods.SEMVER
                 else:
-                    raise SubGitConfigException(f"Key revision.tag for repo {name} must be a string or dict object")
+                    raise SubGitConfigException(f"Key revision.tag for repo {repo.name} must be a string or dict object")
 
                 log.debug(f"{filter_config}")
                 log.debug(f"{order_config}")
@@ -564,7 +484,7 @@ class SubGit():
 
                 # Main tag parsing logic
 
-                git_repo_tags = list(repo.tags)
+                git_repo_tags = list(repo.git_repo.tags)
                 log.debug(f"Raw git tags from git repo {git_repo_tags}")
 
                 filter_output = self._filter(git_repo_tags, filter_config)
@@ -581,36 +501,34 @@ class SubGit():
                 if not select_output:
                     raise SubGitRepoException("No git tag could be parsed out with the current repo configuration")
 
-                log.info(f"Attempting to checkout tag '{select_output}' for repo '{name}'")
+                log.info(f"Attempting to checkout tag '{select_output}' for repo '{repo.name}'")
 
                 # Otherwise atempt to checkout whatever we found. If our selection is still not something valid
                 # inside the git repo, we will get sub exceptions raised by git module.
-                g.checkout(select_output)
+                repo.git.checkout(select_output)
 
-                log.info(f"Checked out tag '{select_output}' for repo '{name}'")
-                log.info(f"Current git hash on HEAD: {str(repo.head.commit)}")
-                log.info(f"Current commit summary on HEAD in git repo '{name}': ")
-                log.info(f"  {str(repo.head.commit.summary)}")
+                log.info(f"Checked out tag '{select_output}' for repo '{repo.name}'")
+                log.info(f"Current git hash on HEAD: {str(repo.git_repo.head.commit)}")
+                log.info(f"Current commit summary on HEAD in git repo '{repo.name}': ")
+                log.info(f"  {str(repo.git_repo.head.commit.summary)}")
 
             # Handle sparse checkout by configure the repo
-            sparse_repo_config = repo_data.get("sparse", None)
-
-            if sparse_repo_config:
-                log.info(f"Enable sparse checkout on repo {name}")
+            if repo.sparse_checkout_enabled:
+                log.info(f"Enable sparse checkout on repo {repo.name}")
 
                 # Always ensure that sparse is enabled
-                g.sparse_checkout("init")
+                repo.git.sparse_checkout("init")
 
                 repos = [
                     str(path)
-                    for path in sparse_repo_config["paths"]
+                    for path in repo.sparse_checkout_config["paths"]
                 ]
 
                 # Set what paths we defined to be checked out
-                g.sparse_checkout("set", *repos)
+                repo.git.sparse_checkout("set", *repos)
 
                 # List all items (files and directories) in the cwd
-                items = list(p.iterdir())
+                items = list(repo.repo_root().iterdir())
 
                 # Filter out the '.git' folder
                 visible_items = [
@@ -626,8 +544,14 @@ class SubGit():
             else:
                 # By always setting disable as a default, this will automatically revert any repo
                 # that used to have sparse enabled but no longer is ensabled
-                log.debug(f"Disabling sparse checkout on repo {name}")
-                g.sparse_checkout("disable")
+                log.debug(f"Disabling sparse checkout on repo {repo.name}")
+                repo.git.sparse_checkout("disable")
+
+    def _filter_for_selected_repos(self, repos, filter_list):
+        if not filter_list:
+            return repos
+
+        return list(filter(lambda repo: repo.name in filter_list, repos))
 
     def delete(self, repo_names=None):
         """
@@ -635,61 +559,75 @@ class SubGit():
         more of them creates a conflict. (e.g repo(s) is not in the config file,
         path(s) is not to a valid git repo or repo(s) is dirty)
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
+        config = self._get_config_file()
+        repos = self._build_repo_objects(config)
+        repos = self._filter_for_selected_repos(repos, repo_names)
+
         has_dirty_repos = False
         good_repos = []
-        repos_dict = self._get_repos(repo_names)
-        repos = repos_dict["repos"]
-        active_repos = repos_dict["active_repos"]
-        repo_choices = repos_dict["repo_choices"]
-        repo_paths = self._get_working_repos(repos, active_repos)
 
-        if not repo_paths:
+        if not repos:
+            log.critical(f"No git repos to delete selected")
             return 1
+
+        repo_choices = ", ".join([
+            repo.name
+            for repo in repos
+        ])
 
         answer = self.yes_no(f"Are you sure you want to delete the following repos '{repo_choices}'?")
 
         if answer:
-            for path in repo_paths:
-                current_repo = Repo(path)
+            for repo in repos:
+                if not repo.is_cloned_to_disk:
+                    # This repo is already not present or cloned on disk, continue to next repo
+                    log.info(f"Git repo '{repo.name}' is already deleted on disk")
+                    continue
 
-                if self._check_remote(current_repo):
-                    has_dirty_repos = True
-                    log.critical(f"'{path.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion.")
+                if self._check_remote(repo.git_repo):
+                    # If repo is dirty, or uncommited changes, the folder can't be removed until that is fixed
+                    log.critical(f"'{repo.name}' has some diff(s) in the local repo or the remote that needs be taken care of before deletion")
                 else:
-                    good_repos.append(path)
-
-            if not has_dirty_repos:
-                for repo in good_repos:
-                    shutil.rmtree(repo)
-                    log.info(f"Successfully removed repo: {path.name}")
+                    # If repo is clean then we try to delete it
+                    shutil.rmtree(repo.repo_root().resolve())
+                    log.info(f"Successfully removed folder: {repo.repo_root()} for repo '{repo.name}'")
 
     def reset(self, repo_names=None, hard_flag=None):
         """
         Will take a list of repos and find any diffs and reset them back
         to the same state they were when they were first pulled.
         """
-        self._get_recursive_config_path()
-        dirty_repos = []
-        repos_dict = self._get_repos(repo_names)
-        repos = repos_dict["repos"]
-        active_repos = repos_dict["active_repos"]
-        repo_choices = repos_dict["repo_choices"]
-        repo_paths = self._get_working_repos(repos, active_repos)
+        self._resolve_recursive_config_path()
+        config = self._get_config_file()
+        repos = self._build_repo_objects(config)
+        repos = self._filter_for_selected_repos(repos, repo_names)
+        # TODO: Add back filtering out of inactive repos
 
-        if not repo_paths:
-            return 1
+        dirty_repos = []
+
+        if not repos:
+            log.critical(f"No git repos to delete selected")
+            return
+
+        repo_choices = ", ".join([
+            repo.name
+            for repo in repos
+        ])
 
         answer = self.yes_no(f"Are you sure you want to reset the following repos '{repo_choices}'?")
 
         if answer:
-            for path in repo_paths:
-                current_repo = Repo(path)
+            for repo in repos:
+                if not repo.is_cloned_to_disk:
+                    # This repo is already not present or cloned on disk, continue to next repo
+                    log.info(f" - Unable to reset git repo '{repo.name}', it is not cloned to disk. Pull the repo first")
+                    continue
 
-                if self._check_remote(current_repo):
-                    dirty_repos.append(path)
+                if self._check_remote(repo.git_repo):
+                    dirty_repos.append(repo)
                 else:
-                    log.info(f"{repo.name} is clean")
+                    log.info(f" - {repo.name} is clean, nothing to reset")
 
             if not dirty_repos:
                 log.error("No repos found to reset. Exiting...")
@@ -698,86 +636,59 @@ class SubGit():
             # Resets repo back to the latest remote commit.
             # If the repo has untracked files, it will not be removed unless '--hard' flag is specified.
             for repo in dirty_repos:
-                repo_to_reset = Repo(repo)
                 flag = "--hard" if hard_flag else None
-                repo_to_reset.git.reset(flag)
-                log.info(f"Successfully reset {repo.name}")
-
-            return 0
+                repo.git.reset(flag)
+                log.info(f" - Successfully reset {repo.name}")
 
     def clean(self, repo_names=None, recurse_into_dir=None, force=None, dry_run=None):
         """
         Method to look through a list of repos and remove untracked files
         """
-        self._get_recursive_config_path()
+        self._resolve_recursive_config_path()
+        config = self._get_config_file()
+        repos = self._build_repo_objects(config)
+        repos = self._filter_for_selected_repos(repos, repo_names)
+        # TODO: Add back filtering out of inactive repos
+
         dirty_repos = []
         recursive_flag = "d" if recurse_into_dir else ""
         force_flag = "f" if force else ""
         dry_run_flag = "n" if dry_run else ""
         flags = f"-{recursive_flag}{force_flag}{dry_run_flag}"
-        repos_dict = self._get_repos(repo_names)
-        repos = repos_dict["repos"]
-        active_repos = repos_dict["active_repos"]
-        repo_paths = self._get_working_repos(repos, active_repos)
 
-        if not repo_paths:
-            return 1
+        if not repos:
+            log.error(f"No git repos to clean selected")
+            return
 
-        for path in repo_paths:
-            current_repo = Repo(path)
+        for repo in repos:
+            if not repo.is_cloned_to_disk:
+                log.warning(f" - Git repo '{repo.name}' is not cloned to disk. Skipping")
+                continue
 
-            if self._check_remote(current_repo):
-                dirty_repos.append(path)
+            if self._check_remote(repo.git_repo):
+                log.info(f" - Dirty Git repo '{repo.name}' found, adding to clean list")
+                dirty_repos.append(repo)
+            else:
+                log.info(f" - Git repo '{repo.name}' is not dirty, nothing to clean")
 
         if not dirty_repos:
-            log.error("No repos found to reset. Exiting...")
-            return 1
+            log.error(" - No dirty git repos found to clean")
+            return
 
-        for repo in repo_paths:
-            current_repo = Repo(repo)
+        for dirty_repo in dirty_repos:
             try:
-                clean_return = current_repo.git.clean(flags)
+                clean_return = dirty_repo.git.clean(flags)
 
-                if clean_return:
-                    log.info(f"Repo: {repo}")
-                    log.info(clean_return)
+                log.info(f"   Clean Repo output: {repo.name}")
+                log.info(f"   '{clean_return}'")
             except git.exc.GitCommandError as er:
-                print(er)
-                return 1
+                log.critical(er)
+                return
 
         if not dry_run:
             log.info("Successfully cleaned repo(s)")
-
-        return 0
-
-    def _get_repos(self, repos=None):
-        """
-        Method takes zero or one repo name as argument.
-
-        Checks if the repo(s) are valid git repo(s) and if there are any untracked changes.
-        """
-        config = self._get_config_file()
-        active_repos = self._get_active_repos(config)
-        active_repos_dict = config.get("repos", [])
-
-        if not repos:
-            repos = active_repos
-
-        # If no names are specified in the command
-        if repos is None:
-            repo_choices = ", ".join(active_repos_dict)
-
-        # If at least one name was specified
-        if isinstance(repos, list):
-            repo_choices = ", ".join(repos)
-
-        working_repos = {
-            "active_repos": active_repos,
-            "repos": repos,
-            "repo_choices": repo_choices
-        }
-
-        return working_repos
+        else:
+            log.info("Command was a dry run. No changes has been saved")
 
     def _check_remote(self, repo):
         """
@@ -785,6 +696,7 @@ class SubGit():
         differences in remote and local commits, and/or has any untracked files.
         """
         has_remote_difference = False
+
         for remote in repo.remotes:
             for branch in repo.branches:
                 try:
@@ -797,65 +709,6 @@ class SubGit():
                     has_remote_difference = True
 
         return has_remote_difference
-
-    def _is_valid_repo(self, path):
-        """
-        Method that checks if the given path is a valid git repo. Returns false if not.
-        """
-        try:
-            Repo(path)
-        except git.exc.InvalidGitRepositoryError:
-            return False
-
-        return True
-
-    def _get_working_repos(self, repos, active_repos):
-        """
-        Method to return two lists of repos.
-        One that contains the names of the repos specified in subgit command.
-        One that contains all repos listed in the working subgit config file.
-
-        Example purpose is to easier check if the repo(s) specified in the subgit command,
-        exists in the subgit config file. etc.
-        """
-        repo_paths = []
-        in_conf_file = True
-        bad_path = []
-        valid_repos = True
-
-        for repo in repos:
-            repo_paths.append(Path().cwd() / repo)
-
-            if repo not in active_repos:
-                log.critical(f"'{repo}' does not exist in {self.subgit_config_file_name} config file.")
-                in_conf_file = False
-
-        if not in_conf_file:
-            return False
-
-        for path in repo_paths:
-            repo_name = path.name
-
-            if not path.exists():
-                log.warning(f"Path to repo does not exist: {repo_name} | Skipping {repo_name}")
-                bad_path.append(path)
-
-        for path in bad_path:
-            repo_paths.remove(path)
-
-        if not repo_paths:
-            log.error("It appears no repos have been cloned. Exiting...")
-            return False
-
-        for path in repo_paths:
-            if not self._is_valid_repo(path):
-                log.critical(f"'{path.name}' is not a git repo")
-                valid_repos = False
-
-        if not valid_repos:
-            return False
-
-        return repo_paths
 
     def _filter(self, sequence, regex_list):
         """
